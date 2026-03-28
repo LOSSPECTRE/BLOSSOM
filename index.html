@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blossom</title>
+    <link rel="icon" href="images/Untitled-removebg-preview.png" sizes="64x64" />
+    <link rel="apple-touch-icon" href="images/Untitled-removebg-preview.png" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg: #020806;
+        --text: #e8fff3;
+        --muted: #7fae92;
+        --accent: #4ade80;
+        --glass: rgba(34, 197, 94, 0.08);
+        --border: rgba(34, 197, 94, 0.15);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        height: 100vh;
+        font-family: Inter;
+        color: var(--text);
+        overflow: hidden;
+        cursor: none;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(34, 197, 94, 0.15),
+            transparent 30%
+          ),
+          radial-gradient(
+            circle at bottom right,
+            rgba(74, 222, 128, 0.12),
+            transparent 30%
+          ),
+          var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* CURSOR */
+      .cursor-dot,
+      .cursor-ring {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+      }
+      .cursor-dot {
+        width: 6px;
+        height: 6px;
+        background: #4ade80;
+        border-radius: 50%;
+      }
+      .cursor-ring {
+        width: 28px;
+        height: 28px;
+        border: 2px solid rgba(74, 222, 128, 0.6);
+        border-radius: 50%;
+      }
+
+      /* CARD */
+      .card {
+        width: 95%;
+        max-width: 950px;
+        padding: 30px;
+        border-radius: 24px;
+        background: var(--glass);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border);
+        position: absolute;
+        cursor: grab;
+      }
+      .card:active {
+        cursor: grabbing;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 42px;
+      }
+      .time {
+        color: var(--muted);
+        margin-top: 5px;
+      }
+
+      input {
+        width: 100%;
+        margin-top: 20px;
+        padding: 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: rgba(34, 197, 94, 0.05);
+        color: white;
+        outline: none;
+      }
+
+      /* ACTIONS */
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+      }
+      .actions button {
+        padding: 8px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(34, 197, 94, 0.1);
+        color: white;
+        cursor: pointer;
+      }
+
+      /* GRID */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 20px;
+      }
+      .widget {
+        padding: 15px;
+        border-radius: 14px;
+        background: rgba(34, 197, 94, 0.05);
+        border: 1px solid var(--border);
+      }
+
+      /* PETALS */
+      .bg-art {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+      .leaves span {
+        position: absolute;
+        background: linear-gradient(135deg, #22c55e, #4ade80);
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(45deg);
+        opacity: 0.8;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+        animation: fall linear infinite;
+      }
+      @keyframes fall {
+        0% {
+          transform: translateY(-10vh) rotate(45deg);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(110vh) translateX(60px) rotate(120deg);
+          opacity: 0;
+        }
+      }
+
+      /* FOCUS MODE */
+      .focus-mode .actions,
+      .focus-mode .grid,
+      .focus-mode #notes {
+        display: none;
+      }
+
+      /* ===== JARVIS ===== */
+      .ai-panel {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        height: 400px;
+        min-width: 220px;
+        min-height: 200px;
+        background: rgba(10, 20, 15, 0.9);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        resize: both;
+      }
+
+      .ai-header,
+      .settings-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .ai-header {
+        padding: 10px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+        cursor: grab;
+        user-select: none;
+      }
+      .ai-header:active {
+        cursor: grabbing;
+      }
+      .panel-close {
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-size: 16px;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 2px;
+        margin-top: 0;
+        width: auto;
+      }
+      .panel-close:hover { color: var(--text); }
+
+      .ai-messages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+        font-size: 14px;
+      }
+
+      #aiInput {
+        border: none;
+        padding: 10px;
+        outline: none;
+        background: rgba(34, 197, 94, 0.05);
+        color: white;
+      }
+
+      /* ===== SETTINGS PANEL ===== */
+      .settings-panel {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 240px;
+        min-width: 200px;
+        min-height: 120px;
+        background: rgba(10, 20, 15, 0.9);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 100;
+        resize: both;
+      }
+      .settings-header {
+        padding: 10px 14px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+        cursor: grab;
+        user-select: none;
+      }
+      .settings-header:active { cursor: grabbing; }
+      .settings-body {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .settings-label {
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .hue-bar {
+        width: 100%;
+        height: 22px;
+        border-radius: 11px;
+        background: linear-gradient(to right,
+          hsl(0,80%,60%), hsl(30,80%,60%), hsl(60,80%,60%),
+          hsl(90,80%,60%), hsl(120,80%,60%), hsl(150,80%,60%),
+          hsl(180,80%,60%), hsl(210,80%,60%), hsl(240,80%,60%),
+          hsl(270,80%,60%), hsl(300,80%,60%), hsl(330,80%,60%), hsl(360,80%,60%)
+        );
+        cursor: crosshair;
+        position: relative;
+      }
+      /* ===== LAYOUT EDITOR ===== */
+      .layout-editor {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 8, 6, 0.8);
+        backdrop-filter: blur(4px);
+        z-index: 500;
+        display: none;
+      }
+      .layout-canvas {
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle, rgba(74, 222, 128, 0.12) 1px, transparent 1px);
+        background-size: 28px 28px;
+      }
+      .layout-hint {
+        position: absolute;
+        top: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(10, 20, 15, 0.95);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 8px 18px;
+        font-size: 13px;
+        color: var(--muted);
+        white-space: nowrap;
+        pointer-events: none;
+      }
+      .layout-toolbar {
+        position: absolute;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(10, 20, 15, 0.95);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 10px 16px;
+      }
+      .layout-save {
+        padding: 8px 20px;
+        border-radius: 10px;
+        border: none;
+        background: var(--accent);
+        color: #020806;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .layout-cancel {
+        padding: 8px 16px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .lp-preview {
+        position: absolute;
+        width: 180px;
+        background: rgba(10, 20, 15, 0.9);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: grab;
+        user-select: none;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+        resize: both;
+        min-width: 140px;
+        min-height: 70px;
+      }
+      .lp-preview.dragging { cursor: grabbing; }
+      .lp-head {
+        padding: 8px 12px;
+        font-weight: 600;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+        background: var(--glass);
+      }
+      .lp-body {
+        padding: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        height: 56px;
+      }
+      .layout-open-btn {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--glass);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 13px;
+        text-align: left;
+        margin-top: 0;
+      }
+      .layout-open-btn:hover { background: rgba(74, 222, 128, 0.14); }
+
+      /* Name input inside settings */
+      .settings-body input[type="text"] {
+        margin-top: 0;
+        padding: 8px 10px;
+        font-size: 13px;
+        border-radius: 8px;
+      }
+
+      /* Tasks */
+      #tasks { margin: 6px 0 0; padding: 0; list-style: none; }
+      #tasks li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 4px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        gap: 6px;
+      }
+      #tasks li:hover { background: var(--glass); }
+      .task-title { flex: 1; }
+      .task-has-desc {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+        opacity: 0.7;
+      }
+      .task-del {
+        background: none; border: none;
+        color: var(--muted); cursor: pointer;
+        font-size: 13px; padding: 0 2px;
+        line-height: 1; margin-top: 0; width: auto;
+      }
+      .task-del:hover { color: #f87171; }
+
+      /* Task create / detail modal */
+      .tmodal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(2, 8, 6, 0.7);
+        backdrop-filter: blur(4px);
+        z-index: 600;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .tmodal-box {
+        width: 360px;
+        background: rgba(10, 20, 15, 0.97);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .tmodal-head {
+        padding: 12px 16px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .tmodal-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+      .tmodal-body input, .tmodal-body textarea {
+        width: 100%; margin-top: 0; padding: 10px 12px;
+        border-radius: 10px; border: 1px solid var(--border);
+        background: var(--glass); color: white;
+        font-family: Inter; font-size: 13px; outline: none;
+        resize: none;
+      }
+      .tmodal-body textarea { height: 90px; }
+      .tmodal-desc-text { font-size: 14px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+      .tmodal-foot {
+        padding: 12px 16px;
+        display: flex; gap: 8px;
+        border-top: 1px solid var(--border);
+      }
+      .tmodal-foot button {
+        flex: 1; padding: 9px;
+        border-radius: 10px; cursor: pointer;
+        font-size: 13px; border: 1px solid var(--border);
+      }
+      .tmodal-foot .btn-primary {
+        background: var(--accent); color: #020806;
+        font-weight: 600; border-color: transparent;
+      }
+      .tmodal-foot .btn-danger {
+        background: rgba(248, 113, 113, 0.15);
+        color: #f87171; border-color: rgba(248,113,113,0.3);
+      }
+      .tmodal-foot .btn-ghost { background: transparent; color: var(--muted); }
+
+      .hue-indicator {
+        position: absolute;
+        top: 50%;
+        left: 0%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 6px rgba(0,0,0,0.6);
+        pointer-events: none;
+        background: #4ade80;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="cursor-dot"></div>
+    <div class="cursor-ring"></div>
+
+    <div class="bg-art"><div class="leaves"></div></div>
+
+    <div class="card">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+        <div>
+          <h1 id="greeting"></h1>
+          <div class="time" id="time"></div>
+        </div>
+        <div style="display:flex; align-items:center; gap:0px;">
+          <img src="images/Untitled-removebg-preview.png" style="width:100px; height:100px; object-fit:contain; margin-right:-10px;" />
+          <span style="font-size:42px; font-weight:800; letter-spacing:0.2em; color:var(--accent); opacity:0.5; line-height:1;">BLOSSOM</span>
+        </div>
+      </div>
+
+      <input id="search" placeholder="Search or type a command..." />
+
+      <div class="actions">
+        <button onclick="window.open('https://chat.openai.com')">
+          ChatGPT
+        </button>
+        <button onclick="window.open('https://youtube.com')">YouTube</button>
+        <button onclick="window.open('https://github.com')">GitHub</button>
+        <button onclick="addTask()">+ Task</button>
+        <button onclick="toggleFocus()">Focus</button>
+        <button id="aiToggleBtn" onclick="toggleAI()">Jarvis</button>
+        <button onclick="toggleSettings()">Settings</button>
+      </div>
+
+      <div class="grid">
+        <div class="widget">
+          <b>🌤 Weather</b>
+          <div>Colombo: 30°C</div>
+        </div>
+        <div class="widget">
+          <b>📝 Tasks</b>
+          <ul id="tasks"></ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="settings-panel" id="settingsPanel">
+      <div class="settings-header">Settings <button class="panel-close" onclick="toggleSettings()">✕</button></div>
+      <div class="settings-body">
+        <div class="settings-label">Accent Color</div>
+        <div class="hue-bar" id="hueBar">
+          <div class="hue-indicator" id="hueIndicator"></div>
+        </div>
+        <div class="settings-label" style="margin-top:6px">Layout</div>
+        <button class="layout-open-btn" onclick="openLayoutEditor()">Customize Layout →</button>
+        <div class="settings-label" style="margin-top:6px">Your Name</div>
+        <input type="text" id="nameInput" placeholder="Enter your name..." />
+        <div class="settings-label" style="margin-top:6px">AI Assistant Name</div>
+        <input type="text" id="aiNameInput" placeholder="e.g. Jarvis, Nova..." />
+      </div>
+    </div>
+
+    <!-- TASK CREATE MODAL -->
+    <div class="tmodal-overlay" id="taskCreateModal">
+      <div class="tmodal-box">
+        <div class="tmodal-head">New Task <button class="panel-close" onclick="closeTaskCreate()">✕</button></div>
+        <div class="tmodal-body">
+          <input id="taskTitleInput" placeholder="Task title..." />
+          <textarea id="taskDescInput" placeholder="Description (optional)..."></textarea>
+        </div>
+        <div class="tmodal-foot">
+          <button class="btn-primary" onclick="submitTask()">Add Task</button>
+          <button class="btn-ghost" onclick="closeTaskCreate()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASK DETAIL MODAL -->
+    <div class="tmodal-overlay" id="taskDetailModal">
+      <div class="tmodal-box">
+        <div class="tmodal-head"><span id="detailTitle"></span> <button class="panel-close" onclick="closeTaskDetail()">✕</button></div>
+        <div class="tmodal-body">
+          <div class="tmodal-desc-text" id="detailDesc"></div>
+        </div>
+        <div class="tmodal-foot">
+          <button class="btn-danger" onclick="deleteCurrentTask()">Delete</button>
+          <button class="btn-ghost" onclick="closeTaskDetail()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LAYOUT EDITOR -->
+    <div class="layout-editor" id="layoutEditor">
+      <div class="layout-canvas" id="layoutCanvas">
+        <div class="layout-hint">Drag panels to position them, then hit Save</div>
+        <div class="lp-preview" id="lp-main">
+          <div class="lp-head">Main Panel</div>
+          <div class="lp-body">Search, tasks &amp; shortcuts</div>
+        </div>
+        <div class="lp-preview" id="lp-jarvis">
+          <div class="lp-head">Jarvis</div>
+          <div class="lp-body">AI chat panel</div>
+        </div>
+        <div class="lp-preview" id="lp-settings">
+          <div class="lp-head">Settings</div>
+          <div class="lp-body">Theme &amp; layout</div>
+        </div>
+        <div class="layout-toolbar">
+          <button class="layout-save" onclick="saveLayout()">Save Layout</button>
+          <button class="layout-cancel" onclick="resetLayout()">Reset</button>
+          <button class="layout-cancel" onclick="closeLayoutEditor()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- JARVIS PANEL -->
+    <div class="ai-panel" id="aiPanel">
+      <div class="ai-header"><span id="aiPanelName">Jarvis</span> <button class="panel-close" onclick="toggleAI()">✕</button></div>
+      <div class="ai-messages" id="aiMessages"></div>
+      <input id="aiInput" placeholder="Ask something..." />
+    </div>
+
+    <script>
+      // TIME
+      function getUserName() {
+        return localStorage.getItem("userName") || "Ray";
+      }
+      function updateTime() {
+        const now = new Date();
+        const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        document.getElementById("time").innerText = time;
+        document.getElementById("greeting").innerText = "Welcome, " + getUserName();
+      }
+      setInterval(updateTime, 1000);
+      updateTime();
+
+      // SEARCH
+      document
+        .getElementById("search")
+        .addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            const q = this.value.trim();
+            if (q.startsWith("yt "))
+              window.location.href =
+                "https://youtube.com/results?search_query=" + q.slice(3);
+            else if (q.startsWith("gh "))
+              window.location.href =
+                "https://github.com/search?q=" + q.slice(3);
+            else window.location.href = "https://google.com/search?q=" + q;
+          }
+        });
+
+      // /
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "/") {
+          e.preventDefault();
+          document.getElementById("search").focus();
+        }
+      });
+
+      // TASKS
+      const taskList = document.getElementById("tasks");
+
+      function getTasks() {
+        return JSON.parse(localStorage.getItem("tasks") || "[]").map(t =>
+          typeof t === "string" ? { id: Date.now() + Math.random(), title: t, desc: "" } : t
+        );
+      }
+      function saveTasks(tasks) {
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+      }
+
+      function loadTasks() {
+        const tasks = getTasks();
+        taskList.innerHTML = "";
+        tasks.forEach((t, i) => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+            <span class="task-title">${t.title}</span>
+            ${t.desc ? '<span class="task-has-desc"></span>' : ''}
+            <button class="task-del" title="Delete">✕</button>
+          `;
+          li.querySelector(".task-title").onclick = () => openTaskDetail(i);
+          li.querySelector(".task-del").onclick = (e) => { e.stopPropagation(); removeTask(i); };
+          taskList.appendChild(li);
+        });
+      }
+
+      // Create modal
+      function addTask() {
+        document.getElementById("taskTitleInput").value = "";
+        document.getElementById("taskDescInput").value = "";
+        document.getElementById("taskCreateModal").style.display = "flex";
+        setTimeout(() => document.getElementById("taskTitleInput").focus(), 50);
+      }
+      function closeTaskCreate() {
+        document.getElementById("taskCreateModal").style.display = "none";
+      }
+      function submitTask() {
+        const title = document.getElementById("taskTitleInput").value.trim();
+        if (!title) return;
+        const desc = document.getElementById("taskDescInput").value.trim();
+        const tasks = getTasks();
+        tasks.push({ id: Date.now(), title, desc });
+        saveTasks(tasks);
+        loadTasks();
+        closeTaskCreate();
+      }
+      document.getElementById("taskTitleInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("taskDescInput").focus();
+      });
+
+      // Detail modal
+      let currentTaskIndex = null;
+      function openTaskDetail(i) {
+        currentTaskIndex = i;
+        const task = getTasks()[i];
+        document.getElementById("detailTitle").innerText = task.title;
+        document.getElementById("detailDesc").innerText = task.desc || "No description.";
+        document.getElementById("taskDetailModal").style.display = "flex";
+      }
+      function closeTaskDetail() {
+        document.getElementById("taskDetailModal").style.display = "none";
+        currentTaskIndex = null;
+      }
+      function deleteCurrentTask() {
+        if (currentTaskIndex === null) return;
+        removeTask(currentTaskIndex);
+        closeTaskDetail();
+      }
+      function removeTask(i) {
+        const tasks = getTasks();
+        tasks.splice(i, 1);
+        saveTasks(tasks);
+        loadTasks();
+      }
+
+      loadTasks();
+
+      // PETALS
+      const leaves = document.querySelector(".leaves");
+      for (let i = 0; i < 40; i++) {
+        const leaf = document.createElement("span");
+        const size = 6 + Math.random() * 6;
+        leaf.style.width = size + "px";
+        leaf.style.height = size + "px";
+        leaf.style.left = Math.random() * 100 + "vw";
+        leaf.style.animationDuration = 6 + Math.random() * 6 + "s";
+        leaf.style.animationDelay = Math.random() * 6 + "s";
+        leaves.appendChild(leaf);
+      }
+
+      // CURSOR
+      const dot = document.querySelector(".cursor-dot");
+      const ring = document.querySelector(".cursor-ring");
+      let mouseX = 0,
+        mouseY = 0,
+        ringX = 0,
+        ringY = 0;
+
+      document.addEventListener("mousemove", (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        dot.style.left = mouseX + "px";
+        dot.style.top = mouseY + "px";
+      });
+
+      function animate() {
+        ringX += (mouseX - ringX) * 0.15;
+        ringY += (mouseY - ringY) * 0.15;
+        ring.style.left = ringX + "px";
+        ring.style.top = ringY + "px";
+        requestAnimationFrame(animate);
+      }
+      animate();
+
+      // DRAG
+      const card = document.querySelector(".card");
+      let isDragging = false,
+        offsetX = 0,
+        offsetY = 0;
+
+      card.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        offsetX = e.clientX - card.offsetLeft;
+        offsetY = e.clientY - card.offsetTop;
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        card.style.left = e.clientX - offsetX + "px";
+        card.style.top = e.clientY - offsetY + "px";
+      });
+
+      document.addEventListener("mouseup", () => (isDragging = false));
+
+      // FOCUS
+      function toggleFocus() {
+        document.body.classList.toggle("focus-mode");
+      }
+
+      // ===== JARVIS =====
+      function toggleAI() {
+        const panel = document.getElementById("aiPanel");
+        if (panel.style.display === "flex") {
+          panel.style.display = "none";
+        } else {
+          panel.style.display = "flex";
+          const layout = JSON.parse(localStorage.getItem("panelLayout") || "{}");
+          if (layout.jarvis) {
+            panel.style.right  = "auto";
+            panel.style.bottom = "auto";
+            panel.style.left   = layout.jarvis.left   + "px";
+            panel.style.top    = layout.jarvis.top    + "px";
+            panel.style.width  = layout.jarvis.width  + "px";
+            panel.style.height = layout.jarvis.height + "px";
+          }
+        }
+      }
+
+      const aiInput = document.getElementById("aiInput");
+      const aiMessages = document.getElementById("aiMessages");
+
+      aiInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          const msg = this.value;
+          if (!msg) return;
+
+          addMessage("You", msg);
+          addMessage("Jarvis", generateReply(msg));
+          this.value = "";
+        }
+      });
+
+      function addMessage(sender, text) {
+        const div = document.createElement("div");
+        div.innerHTML = `<b>${sender}:</b> ${text}`;
+        aiMessages.appendChild(div);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+      }
+
+      function generateReply(msg) {
+        msg = msg.toLowerCase();
+
+        if (msg.includes("time")) return new Date().toLocaleTimeString();
+        if (msg.includes("date")) return new Date().toDateString();
+        if (msg.includes("hello")) return "Hey " + getUserName() + " 👋";
+        if (msg.includes("focus")) return "Stay locked in.";
+        if (msg.includes("youtube")) {
+          window.open("https://youtube.com");
+          return "Opening YouTube...";
+        }
+
+        return "I’m learning… but I’ve got your back.";
+      }
+
+      // JARVIS DRAG
+      const aiPanel = document.getElementById("aiPanel");
+      const aiHeader = document.querySelector(".ai-header");
+      let aiDragging = false, aiOffsetX = 0, aiOffsetY = 0;
+
+      aiHeader.addEventListener("mousedown", (e) => {
+        aiDragging = true;
+        const rect = aiPanel.getBoundingClientRect();
+        aiOffsetX = e.clientX - rect.left;
+        aiOffsetY = e.clientY - rect.top;
+        aiPanel.style.right = "auto";
+        aiPanel.style.bottom = "auto";
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!aiDragging) return;
+        aiPanel.style.left = e.clientX - aiOffsetX + "px";
+        aiPanel.style.top = e.clientY - aiOffsetY + "px";
+      });
+
+      document.addEventListener("mouseup", () => (aiDragging = false));
+
+      // ===== SETTINGS =====
+      function toggleSettings() {
+        const panel = document.getElementById("settingsPanel");
+        if (panel.style.display === "flex") {
+          panel.style.display = "none";
+        } else {
+          panel.style.display = "flex";
+          const layout = JSON.parse(localStorage.getItem("panelLayout") || "{}");
+          if (layout.settings) {
+            panel.style.right  = "auto";
+            panel.style.left   = layout.settings.left   + "px";
+            panel.style.top    = layout.settings.top    + "px";
+            panel.style.width  = layout.settings.width  + "px";
+            panel.style.height = layout.settings.height + "px";
+          }
+        }
+      }
+
+      function hexToRgb(hex) {
+        return {
+          r: parseInt(hex.slice(1, 3), 16),
+          g: parseInt(hex.slice(3, 5), 16),
+          b: parseInt(hex.slice(5, 7), 16),
+        };
+      }
+
+      function applyAccent(hex) {
+        const { r, g, b } = hexToRgb(hex);
+        const rgb = `${r}, ${g}, ${b}`;
+        const root = document.documentElement;
+
+        root.style.setProperty("--accent", hex);
+        root.style.setProperty("--glass", `rgba(${rgb}, 0.08)`);
+        root.style.setProperty("--border", `rgba(${rgb}, 0.15)`);
+
+        document.body.style.background = `
+          radial-gradient(circle at top left, rgba(${rgb}, 0.15), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(${rgb}, 0.12), transparent 30%),
+          var(--bg)
+        `;
+
+        dot.style.background = hex;
+        ring.style.borderColor = `rgba(${rgb}, 0.6)`;
+
+        document.querySelectorAll(".leaves span").forEach((leaf) => {
+          leaf.style.background = `linear-gradient(135deg, ${hex}cc, ${hex})`;
+          leaf.style.boxShadow = `0 0 8px rgba(${rgb}, 0.4)`;
+        });
+
+        localStorage.setItem("accentColor", hex);
+      }
+
+      // SETTINGS DRAG
+      const settingsPanel = document.getElementById("settingsPanel");
+      const settingsHeader = document.querySelector(".settings-header");
+      let sDragging = false, sOffsetX = 0, sOffsetY = 0;
+
+      settingsHeader.addEventListener("mousedown", (e) => {
+        if (e.target.classList.contains("panel-close")) return;
+        sDragging = true;
+        const rect = settingsPanel.getBoundingClientRect();
+        sOffsetX = e.clientX - rect.left;
+        sOffsetY = e.clientY - rect.top;
+        settingsPanel.style.right = "auto";
+        settingsPanel.style.top = "auto";
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!sDragging) return;
+        settingsPanel.style.left = e.clientX - sOffsetX + "px";
+        settingsPanel.style.top = e.clientY - sOffsetY + "px";
+      });
+
+      document.addEventListener("mouseup", () => (sDragging = false));
+
+      // HUE BAR
+      function hslToHex(h, s, l) {
+        s /= 100; l /= 100;
+        const a = s * Math.min(l, 1 - l);
+        const f = (n) => {
+          const k = (n + h / 30) % 12;
+          const c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+          return Math.round(255 * c).toString(16).padStart(2, "0");
+        };
+        return `#${f(0)}${f(8)}${f(4)}`;
+      }
+
+      function hexToHue(hex) {
+        const { r, g, b } = hexToRgb(hex);
+        const rn = r / 255, gn = g / 255, bn = b / 255;
+        const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn);
+        let h = 0;
+        if (max !== min) {
+          const d = max - min;
+          if (max === rn) h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6;
+          else if (max === gn) h = ((bn - rn) / d + 2) / 6;
+          else h = ((rn - gn) / d + 4) / 6;
+        }
+        return h;
+      }
+
+      const hueBar = document.getElementById("hueBar");
+      const hueIndicator = document.getElementById("hueIndicator");
+      let hueDragging = false;
+
+      function pickFromBar(e) {
+        const rect = hueBar.getBoundingClientRect();
+        const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+        const ratio = x / rect.width;
+        const hue = Math.round(ratio * 360);
+        const hex = hslToHex(hue, 80, 60);
+        hueIndicator.style.left = ratio * 100 + "%";
+        hueIndicator.style.background = hex;
+        applyAccent(hex);
+      }
+
+      hueBar.addEventListener("mousedown", (e) => { hueDragging = true; pickFromBar(e); });
+      document.addEventListener("mousemove", (e) => { if (hueDragging) pickFromBar(e); });
+      document.addEventListener("mouseup", () => (hueDragging = false));
+
+      // NAME INPUT
+      const nameInput = document.getElementById("nameInput");
+      nameInput.value = getUserName();
+      nameInput.addEventListener("input", function () {
+        localStorage.setItem("userName", this.value.trim() || "Ray");
+        updateTime();
+      });
+
+      // AI NAME INPUT
+      function getAIName() {
+        return localStorage.getItem("aiName") || "Jarvis";
+      }
+      function applyAIName(name) {
+        document.getElementById("aiPanelName").innerText = name;
+        document.getElementById("aiToggleBtn").innerText = name;
+      }
+      const aiNameInput = document.getElementById("aiNameInput");
+      aiNameInput.value = getAIName();
+      applyAIName(getAIName());
+      aiNameInput.addEventListener("input", function () {
+        const name = this.value.trim() || "Jarvis";
+        localStorage.setItem("aiName", name);
+        applyAIName(name);
+      });
+
+      const savedAccent = localStorage.getItem("accentColor");
+      if (savedAccent) {
+        const ratio = hexToHue(savedAccent);
+        hueIndicator.style.left = ratio * 100 + "%";
+        hueIndicator.style.background = savedAccent;
+        applyAccent(savedAccent);
+      }
+
+      // ===== LAYOUT EDITOR =====
+      function openLayoutEditor() {
+        document.getElementById("settingsPanel").style.display = "none";
+
+        const layout = JSON.parse(localStorage.getItem("panelLayout") || "{}");
+        const cardRect = document.querySelector(".card").getBoundingClientRect();
+
+        const mEl = document.getElementById("lp-main");
+        mEl.style.left   = (layout.main?.left   ?? cardRect.left)   + "px";
+        mEl.style.top    = (layout.main?.top    ?? cardRect.top)    + "px";
+        mEl.style.width  = (layout.main?.width  ?? cardRect.width)  + "px";
+        mEl.style.height = (layout.main?.height ?? cardRect.height) + "px";
+
+        const jEl = document.getElementById("lp-jarvis");
+        jEl.style.left   = (layout.jarvis?.left   ?? window.innerWidth - 220)        + "px";
+        jEl.style.top    = (layout.jarvis?.top    ?? window.innerHeight - 320)       + "px";
+        jEl.style.width  = (layout.jarvis?.width  ?? 300) + "px";
+        jEl.style.height = (layout.jarvis?.height ?? 400) + "px";
+
+        const sEl = document.getElementById("lp-settings");
+        sEl.style.left   = (layout.settings?.left   ?? window.innerWidth - 260) + "px";
+        sEl.style.top    = (layout.settings?.top    ?? 20)  + "px";
+        sEl.style.width  = (layout.settings?.width  ?? 240) + "px";
+        sEl.style.height = (layout.settings?.height ?? 160) + "px";
+
+        document.getElementById("layoutEditor").style.display = "block";
+      }
+
+      function closeLayoutEditor() {
+        document.getElementById("layoutEditor").style.display = "none";
+      }
+
+      function resetLayout() {
+        const mEl = document.getElementById("lp-main");
+        mEl.style.left   = Math.round((window.innerWidth - 950) / 2) + "px";
+        mEl.style.top    = Math.round((window.innerHeight - 400) / 2) + "px";
+        mEl.style.width  = "950px";
+        mEl.style.height = "";
+
+        const jEl = document.getElementById("lp-jarvis");
+        jEl.style.left   = window.innerWidth  - 220 + "px";
+        jEl.style.top    = window.innerHeight - 320 + "px";
+        jEl.style.width  = "300px";
+        jEl.style.height = "400px";
+
+        const sEl = document.getElementById("lp-settings");
+        sEl.style.left   = window.innerWidth  - 260 + "px";
+        sEl.style.top    = "20px";
+        sEl.style.width  = "240px";
+        sEl.style.height = "160px";
+      }
+
+      function saveLayout() {
+        const rect = (id) => document.getElementById(id).getBoundingClientRect();
+        const mR = rect("lp-main"), jR = rect("lp-jarvis"), sR = rect("lp-settings");
+        localStorage.setItem("panelLayout", JSON.stringify({
+          main:     { left: Math.round(mR.left), top: Math.round(mR.top), width: Math.round(mR.width), height: Math.round(mR.height) },
+          jarvis:   { left: Math.round(jR.left), top: Math.round(jR.top), width: Math.round(jR.width), height: Math.round(jR.height) },
+          settings: { left: Math.round(sR.left), top: Math.round(sR.top), width: Math.round(sR.width), height: Math.round(sR.height) },
+        }));
+        applyMainLayout();
+        closeLayoutEditor();
+      }
+
+      function applyMainLayout() {
+        const layout = JSON.parse(localStorage.getItem("panelLayout") || "{}");
+        if (!layout.main) return;
+        const card = document.querySelector(".card");
+        card.style.left   = layout.main.left   + "px";
+        card.style.top    = layout.main.top    + "px";
+        card.style.width  = layout.main.width  + "px";
+        card.style.maxWidth = "none";
+      }
+      applyMainLayout();
+
+      // Drag inside layout canvas — skip if click is on resize handle corner
+      let lpDragging = null, lpOffX = 0, lpOffY = 0;
+
+      document.querySelectorAll(".lp-preview").forEach((el) => {
+        el.addEventListener("mousedown", (e) => {
+          const r = el.getBoundingClientRect();
+          if (e.clientX > r.right - 18 && e.clientY > r.bottom - 18) return;
+          lpDragging = el;
+          lpOffX = e.clientX - el.offsetLeft;
+          lpOffY = e.clientY - el.offsetTop;
+          el.classList.add("dragging");
+          e.stopPropagation();
+        });
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!lpDragging) return;
+        lpDragging.style.left = e.clientX - lpOffX + "px";
+        lpDragging.style.top  = e.clientY - lpOffY + "px";
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (lpDragging) lpDragging.classList.remove("dragging");
+        lpDragging = null;
+      });
+
+      // FAVICON — crop whitespace so flower fills the tab icon
+      (function() {
+        const img = new Image();
+        img.src = "images/Untitled-removebg-preview.png";
+        img.onload = function() {
+          const canvas = document.createElement("canvas");
+          canvas.width = 64; canvas.height = 64;
+          const ctx = canvas.getContext("2d");
+          // zoom in ~1.8x to strip the padding around the flower
+          const zoom = 1.8;
+          const offset = -(64 * (zoom - 1)) / 2;
+          ctx.drawImage(img, offset, offset, 64 * zoom, 64 * zoom);
+          const link = document.querySelector("link[rel='icon']");
+          link.href = canvas.toDataURL("image/png");
+        };
+      })();
+
+      // autofocus
+      document.getElementById("search").focus();
+    </script>
+  </body>
+</html>
