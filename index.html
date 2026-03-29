@@ -89,7 +89,8 @@
 
       h1 {
         margin: 0;
-        font-size: 42px;
+        font-size: 36px;
+        white-space: nowrap;
       }
       .time {
         color: var(--muted);
@@ -511,7 +512,16 @@
           <div class="time" id="time"></div>
         </div>
         <div style="display:flex; align-items:center; gap:0px;">
-          <img src="images/Untitled-removebg-preview.png" style="width:100px; height:100px; object-fit:contain; margin-right:-10px;" />
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:42px;height:42px;flex-shrink:0;margin-right:6px;">
+            <g transform="translate(50,50)">
+              <ellipse rx="15" ry="28" cy="-19" fill="var(--accent)" opacity="0.9" transform="rotate(0)"/>
+              <ellipse rx="15" ry="28" cy="-19" fill="var(--accent)" opacity="0.9" transform="rotate(72)"/>
+              <ellipse rx="15" ry="28" cy="-19" fill="var(--accent)" opacity="0.9" transform="rotate(144)"/>
+              <ellipse rx="15" ry="28" cy="-19" fill="var(--accent)" opacity="0.9" transform="rotate(216)"/>
+              <ellipse rx="15" ry="28" cy="-19" fill="var(--accent)" opacity="0.9" transform="rotate(288)"/>
+              <circle r="7" fill="white" opacity="0.5"/>
+            </g>
+          </svg>
           <span style="font-size:42px; font-weight:800; letter-spacing:0.2em; color:var(--accent); opacity:0.5; line-height:1;">BLOSSOM</span>
         </div>
       </div>
@@ -805,16 +815,8 @@
         if (panel.style.display === "flex") {
           panel.style.display = "none";
         } else {
-          panel.style.display = "flex";
           const layout = JSON.parse(localStorage.getItem("panelLayout") || "{}");
-          if (layout.jarvis) {
-            panel.style.right  = "auto";
-            panel.style.bottom = "auto";
-            panel.style.left   = layout.jarvis.left   + "px";
-            panel.style.top    = layout.jarvis.top    + "px";
-            panel.style.width  = layout.jarvis.width  + "px";
-            panel.style.height = layout.jarvis.height + "px";
-          }
+          openPanelAt(panel, layout.jarvis || getDefaultLayout().jarvis);
         }
       }
 
@@ -933,15 +935,8 @@
         if (panel.style.display === "flex") {
           panel.style.display = "none";
         } else {
-          panel.style.display = "flex";
           const layout = JSON.parse(localStorage.getItem("panelLayout") || "{}");
-          if (layout.settings) {
-            panel.style.right  = "auto";
-            panel.style.left   = layout.settings.left   + "px";
-            panel.style.top    = layout.settings.top    + "px";
-            panel.style.width  = layout.settings.width  + "px";
-            panel.style.height = layout.settings.height + "px";
-          }
+          openPanelAt(panel, layout.settings || getDefaultLayout().settings);
         }
       }
 
@@ -976,6 +971,7 @@
           leaf.style.boxShadow = `0 0 8px rgba(${rgb}, 0.4)`;
         });
 
+        updateFavicon(hex);
         localStorage.setItem("accentColor", hex);
       }
 
@@ -1112,24 +1108,51 @@
         document.getElementById("layoutEditor").style.display = "none";
       }
 
+      function getDefaultLayout() {
+        const W = window.innerWidth, H = window.innerHeight;
+        const gap = 15;
+        const aiW = 260, sW = 240;
+        const cardW = Math.min(Math.round(W * 0.52), 780);
+        const cardH = 400, aiH = 400, sH = 400;
+        const totalW = aiW + gap + cardW + gap + sW;
+        const startX = Math.round((W - totalW) / 2);
+        const topY   = Math.round((H - cardH) / 2);
+        return {
+          jarvis:   { left: startX,                            top: topY, width: aiW,   height: aiH  },
+          main:     { left: startX + aiW + gap,                top: topY, width: cardW, height: cardH },
+          settings: { left: startX + aiW + gap + cardW + gap, top: topY, width: sW,    height: sH   },
+        };
+      }
+
+      function applyDefaultLayout() {
+        const def = getDefaultLayout();
+        localStorage.setItem("panelLayout", JSON.stringify(def));
+        const card = document.querySelector(".card");
+        card.style.left     = def.main.left  + "px";
+        card.style.top      = def.main.top   + "px";
+        card.style.width    = def.main.width + "px";
+        card.style.maxWidth = "none";
+      }
+
       function resetLayout() {
+        const def = getDefaultLayout();
         const mEl = document.getElementById("lp-main");
-        mEl.style.left   = Math.round((window.innerWidth - 950) / 2) + "px";
-        mEl.style.top    = Math.round((window.innerHeight - 400) / 2) + "px";
-        mEl.style.width  = "950px";
-        mEl.style.height = "";
+        mEl.style.left   = def.main.left   + "px";
+        mEl.style.top    = def.main.top    + "px";
+        mEl.style.width  = def.main.width  + "px";
+        mEl.style.height = def.main.height + "px";
 
         const jEl = document.getElementById("lp-jarvis");
-        jEl.style.left   = window.innerWidth  - 220 + "px";
-        jEl.style.top    = window.innerHeight - 320 + "px";
-        jEl.style.width  = "300px";
-        jEl.style.height = "400px";
+        jEl.style.left   = def.jarvis.left   + "px";
+        jEl.style.top    = def.jarvis.top    + "px";
+        jEl.style.width  = def.jarvis.width  + "px";
+        jEl.style.height = def.jarvis.height + "px";
 
         const sEl = document.getElementById("lp-settings");
-        sEl.style.left   = window.innerWidth  - 260 + "px";
-        sEl.style.top    = "20px";
-        sEl.style.width  = "240px";
-        sEl.style.height = "160px";
+        sEl.style.left   = def.settings.left   + "px";
+        sEl.style.top    = def.settings.top    + "px";
+        sEl.style.width  = def.settings.width  + "px";
+        sEl.style.height = def.settings.height + "px";
       }
 
       function saveLayout() {
@@ -1145,15 +1168,34 @@
       }
 
       function applyMainLayout() {
-        const layout = JSON.parse(localStorage.getItem("panelLayout") || "{}");
-        if (!layout.main) return;
+        const saved = localStorage.getItem("panelLayout");
+        if (!saved || !JSON.parse(saved).main) { applyDefaultLayout(); return; }
+        const layout = JSON.parse(saved);
+        // Re-apply default if layout version changed
+        if (!layout.jarvis) { applyDefaultLayout(); return; }
         const card = document.querySelector(".card");
-        card.style.left   = layout.main.left   + "px";
-        card.style.top    = layout.main.top    + "px";
-        card.style.width  = layout.main.width  + "px";
+        card.style.left     = layout.main.left   + "px";
+        card.style.top      = layout.main.top    + "px";
+        card.style.width    = layout.main.width  + "px";
         card.style.maxWidth = "none";
       }
       applyMainLayout();
+
+      // Auto-open panels at saved/default positions on load
+      function openPanelAt(panel, pos) {
+        panel.style.display = "flex";
+        panel.style.right  = "auto";
+        panel.style.bottom = "auto";
+        panel.style.left   = pos.left   + "px";
+        panel.style.top    = pos.top    + "px";
+        panel.style.width  = pos.width  + "px";
+        panel.style.height = pos.height + "px";
+      }
+
+      const initLayout = JSON.parse(localStorage.getItem("panelLayout") || "{}");
+      const defLayout  = getDefaultLayout();
+      openPanelAt(document.getElementById("aiPanel"),       initLayout.jarvis   || defLayout.jarvis);
+      openPanelAt(document.getElementById("settingsPanel"), initLayout.settings || defLayout.settings);
 
       // Drag inside layout canvas — skip if click is on resize handle corner
       let lpDragging = null, lpOffX = 0, lpOffY = 0;
@@ -1181,22 +1223,22 @@
         lpDragging = null;
       });
 
-      // FAVICON — crop whitespace so flower fills the tab icon
-      (function() {
-        const img = new Image();
-        img.src = "images/Untitled-removebg-preview.png";
-        img.onload = function() {
-          const canvas = document.createElement("canvas");
-          canvas.width = 64; canvas.height = 64;
-          const ctx = canvas.getContext("2d");
-          // zoom in ~1.8x to strip the padding around the flower
-          const zoom = 1.8;
-          const offset = -(64 * (zoom - 1)) / 2;
-          ctx.drawImage(img, offset, offset, 64 * zoom, 64 * zoom);
-          const link = document.querySelector("link[rel='icon']");
-          link.href = canvas.toDataURL("image/png");
-        };
-      })();
+      // FAVICON — generate from SVG with current accent color
+      function updateFavicon(color) {
+        const svg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(50,50)">
+            <ellipse rx="15" ry="28" cy="-19" fill="${color}" opacity="0.9" transform="rotate(0)"/>
+            <ellipse rx="15" ry="28" cy="-19" fill="${color}" opacity="0.9" transform="rotate(72)"/>
+            <ellipse rx="15" ry="28" cy="-19" fill="${color}" opacity="0.9" transform="rotate(144)"/>
+            <ellipse rx="15" ry="28" cy="-19" fill="${color}" opacity="0.9" transform="rotate(216)"/>
+            <ellipse rx="15" ry="28" cy="-19" fill="${color}" opacity="0.9" transform="rotate(288)"/>
+            <circle r="7" fill="white" opacity="0.5"/>
+          </g>
+        </svg>`;
+        const url = "data:image/svg+xml," + encodeURIComponent(svg);
+        document.querySelector("link[rel='icon']").href = url;
+      }
+      updateFavicon("#4ade80");
 
       // autofocus
       document.getElementById("search").focus();
