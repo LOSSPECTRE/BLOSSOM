@@ -526,7 +526,7 @@
         <button onclick="window.open('https://github.com')">GitHub</button>
         <button onclick="addTask()">+ Task</button>
         <button onclick="toggleFocus()">Focus</button>
-        <button id="aiToggleBtn" onclick="toggleAI()">Jarvis</button>
+        <button id="aiToggleBtn" onclick="toggleAI()">BLOSSOM-AI</button>
         <button onclick="toggleSettings()">Settings</button>
       </div>
 
@@ -556,7 +556,7 @@
         <div class="settings-label" style="margin-top:6px">Your Name</div>
         <input type="text" id="nameInput" placeholder="Enter your name..." />
         <div class="settings-label" style="margin-top:6px">AI Assistant Name</div>
-        <input type="text" id="aiNameInput" placeholder="e.g. Jarvis, Nova..." />
+        <input type="text" id="aiNameInput" placeholder="e.g. BLOSSOM-AI, Nova..." />
       </div>
     </div>
 
@@ -598,7 +598,7 @@
           <div class="lp-body">Search, tasks &amp; shortcuts</div>
         </div>
         <div class="lp-preview" id="lp-jarvis">
-          <div class="lp-head">Jarvis</div>
+          <div class="lp-head">BLOSSOM-AI</div>
           <div class="lp-body">AI chat panel</div>
         </div>
         <div class="lp-preview" id="lp-settings">
@@ -615,7 +615,7 @@
 
     <!-- JARVIS PANEL -->
     <div class="ai-panel" id="aiPanel">
-      <div class="ai-header"><span id="aiPanelName">Jarvis</span> <button class="panel-close" onclick="toggleAI()">✕</button></div>
+      <div class="ai-header"><span id="aiPanelName">BLOSSOM-AI</span> <button class="panel-close" onclick="toggleAI()">✕</button></div>
       <div class="ai-messages" id="aiMessages"></div>
       <input id="aiInput" placeholder="Ask something..." />
     </div>
@@ -820,39 +820,90 @@
 
       const aiInput = document.getElementById("aiInput");
       const aiMessages = document.getElementById("aiMessages");
+      const chatHistory = [];
 
-      aiInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") {
-          const msg = this.value;
-          if (!msg) return;
+      aiInput.addEventListener("keydown", async function (e) {
+        if (e.key !== "Enter") return;
+        const msg = this.value.trim();
+        if (!msg) return;
+        this.value = "";
+        this.disabled = true;
 
-          addMessage("You", msg);
-          addMessage("Jarvis", generateReply(msg));
-          this.value = "";
+        addMessage("You", msg);
+        const thinking = addMessage(getAIName(), "...");
+
+        chatHistory.push({ role: "user", content: msg });
+
+        try {
+          const res = await fetch("http://localhost:3000/api/jarvis", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msg, history: chatHistory.slice(0, -1) }),
+          });
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          const msgEl = thinking.querySelector(".msg-text");
+          msgEl.innerText = "";
+          let reply = "";
+          let leftover = "";
+          let charQueue = [];
+          let displayed = "";
+          let animRunning = false;
+
+          function drainQueue() {
+            if (charQueue.length === 0) { animRunning = false; return; }
+            const charsPerFrame = 2;
+            for (let i = 0; i < charsPerFrame && charQueue.length; i++) {
+              displayed += charQueue.shift();
+            }
+            msgEl.innerText = displayed;
+            aiMessages.scrollTop = aiMessages.scrollHeight;
+            requestAnimationFrame(drainQueue);
+          }
+
+          function enqueue(text) {
+            for (const ch of text) charQueue.push(ch);
+            if (!animRunning) { animRunning = true; requestAnimationFrame(drainQueue); }
+          }
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            leftover += decoder.decode(value, { stream: true });
+            const lines = leftover.split("\n");
+            leftover = lines.pop();
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const payload = line.slice(6);
+              if (payload === "[DONE]") break;
+              try {
+                const { content } = JSON.parse(payload);
+                reply += content;
+                enqueue(content);
+              } catch {}
+            }
+          }
+
+          await new Promise(r => { const check = () => charQueue.length ? requestAnimationFrame(check) : r(); check(); });
+          chatHistory.push({ role: "assistant", content: reply });
+        } catch {
+          thinking.querySelector(".msg-text").innerText = "Can’t reach the server. Make sure it’s running.";
         }
+
+        this.disabled = false;
+        this.focus();
       });
 
       function addMessage(sender, text) {
         const div = document.createElement("div");
-        div.innerHTML = `<b>${sender}:</b> ${text}`;
+        div.style.marginBottom = "6px";
+        div.innerHTML = `<b>${sender}:</b> <span class="msg-text">${text}</span>`;
         aiMessages.appendChild(div);
         aiMessages.scrollTop = aiMessages.scrollHeight;
+        return div;
       }
 
-      function generateReply(msg) {
-        msg = msg.toLowerCase();
-
-        if (msg.includes("time")) return new Date().toLocaleTimeString();
-        if (msg.includes("date")) return new Date().toDateString();
-        if (msg.includes("hello")) return "Hey " + getUserName() + " 👋";
-        if (msg.includes("focus")) return "Stay locked in.";
-        if (msg.includes("youtube")) {
-          window.open("https://youtube.com");
-          return "Opening YouTube...";
-        }
-
-        return "I’m learning… but I’ve got your back.";
-      }
 
       // JARVIS DRAG
       const aiPanel = document.getElementById("aiPanel");
@@ -1006,7 +1057,7 @@
 
       // AI NAME INPUT
       function getAIName() {
-        return localStorage.getItem("aiName") || "Jarvis";
+        return localStorage.getItem("aiName") || "BLOSSOM-AI";
       }
       function applyAIName(name) {
         document.getElementById("aiPanelName").innerText = name;
@@ -1016,7 +1067,7 @@
       aiNameInput.value = getAIName();
       applyAIName(getAIName());
       aiNameInput.addEventListener("input", function () {
-        const name = this.value.trim() || "Jarvis";
+        const name = this.value.trim() || "BLOSSOM-AI";
         localStorage.setItem("aiName", name);
         applyAIName(name);
       });
