@@ -138,33 +138,61 @@
         border: 1px solid var(--border);
       }
 
-      /* PETALS */
-      .bg-art {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-      }
+      /* BACKGROUNDS */
+      .bg-art { position: fixed; inset: 0; pointer-events: none; }
       .leaves span {
         position: absolute;
-        background: linear-gradient(135deg, #22c55e, #4ade80);
         border-radius: 50% 50% 50% 0;
         transform: rotate(45deg);
         opacity: 0.8;
-        box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
         animation: fall linear infinite;
       }
       @keyframes fall {
-        0% {
-          transform: translateY(-10vh) rotate(45deg);
-          opacity: 0;
-        }
-        10% {
-          opacity: 1;
-        }
-        100% {
-          transform: translateY(110vh) translateX(60px) rotate(120deg);
-          opacity: 0;
-        }
+        0%   { transform: translateY(-10vh) rotate(45deg); opacity: 0; }
+        10%  { opacity: 1; }
+        100% { transform: translateY(110vh) translateX(60px) rotate(120deg); opacity: 0; }
+      }
+      .particle {
+        position: absolute;
+        border-radius: 50%;
+        animation: drift linear infinite;
+      }
+      @keyframes drift {
+        0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
+        10%  { opacity: 1; }
+        90%  { opacity: 1; }
+        100% { transform: translateY(-10vh) translateX(40px); opacity: 0; }
+      }
+      .star {
+        position: absolute;
+        border-radius: 50%;
+        animation: twinkle ease-in-out infinite alternate;
+      }
+      @keyframes twinkle {
+        from { opacity: 0.1; transform: scale(0.8); }
+        to   { opacity: 0.9; transform: scale(1.2); }
+      }
+      body.bg-grid .bg-art {
+        background-image: radial-gradient(circle, var(--accent) 1px, transparent 1px);
+        background-size: 36px 36px;
+        opacity: 0.15;
+      }
+      .bg-options { display: flex; flex-wrap: wrap; gap: 6px; }
+      .bg-options button {
+        padding: 6px 12px; border-radius: 8px;
+        border: 1px solid var(--border); background: var(--glass);
+        color: var(--text); cursor: pointer; font-size: 12px;
+        margin-top: 0; width: auto;
+      }
+      .bg-options button.active {
+        background: var(--accent); color: #020806;
+        font-weight: 600; border-color: transparent;
+      }
+      .bg-more-btn {
+        font-size: 16px; font-weight: 700; line-height: 1;
+      }
+      .settings-panel {
+        transition: height 0.3s cubic-bezier(0.4,0,0.2,1);
       }
 
       /* FOCUS MODE */
@@ -209,6 +237,20 @@
       .ai-header:active {
         cursor: grabbing;
       }
+      .ai-panel {
+        transition: left 0.35s cubic-bezier(0.4,0,0.2,1),
+                    top 0.35s cubic-bezier(0.4,0,0.2,1),
+                    width 0.35s cubic-bezier(0.4,0,0.2,1),
+                    height 0.35s cubic-bezier(0.4,0,0.2,1);
+      }
+      .ai-panel.expanded {
+        left: 5vw !important;
+        top: 5vh !important;
+        width: 90vw !important;
+        height: 90vh !important;
+        resize: none;
+        z-index: 200;
+      }
       .panel-close {
         background: none;
         border: none;
@@ -231,10 +273,13 @@
 
       #aiInput {
         border: none;
-        padding: 10px;
+        border-top: 1px solid var(--border);
+        padding: 14px 16px;
         outline: none;
         background: rgba(34, 197, 94, 0.05);
         color: white;
+        font-size: 14px;
+        font-family: Inter;
       }
 
       /* ===== SETTINGS PANEL ===== */
@@ -561,6 +606,18 @@
         <div class="hue-bar" id="hueBar">
           <div class="hue-indicator" id="hueIndicator"></div>
         </div>
+        <div class="settings-label" style="margin-top:6px">Background</div>
+        <div class="bg-options" id="bgOptions">
+          <button data-bg="petals"    onclick="applyBackground('petals')">Petals</button>
+          <button data-bg="particles" onclick="applyBackground('particles')">Particles</button>
+          <button class="bg-more-btn" id="bgMoreBtn" onclick="toggleBgMore()">+</button>
+        </div>
+        <div class="bg-options" id="bgOptionsMore" style="display:none;margin-top:6px;">
+          <button data-bg="stars"  onclick="applyBackground('stars')">Stars</button>
+          <button data-bg="grid"   onclick="applyBackground('grid')">Grid</button>
+          <button data-bg="galaxy" onclick="applyBackground('galaxy')">Galaxy</button>
+          <button data-bg="none"   onclick="applyBackground('none')">None</button>
+        </div>
         <div class="settings-label" style="margin-top:6px">Layout</div>
         <button class="layout-open-btn" onclick="openLayoutEditor()">Customize Layout →</button>
         <div class="settings-label" style="margin-top:6px">Your Name</div>
@@ -625,7 +682,7 @@
 
     <!-- JARVIS PANEL -->
     <div class="ai-panel" id="aiPanel">
-      <div class="ai-header"><span id="aiPanelName">BLOSSOM-AI</span> <button class="panel-close" onclick="toggleAI()">✕</button></div>
+      <div class="ai-header"><span id="aiPanelName">BLOSSOM-AI</span> <div style="display:flex;gap:6px;"><button class="panel-close" id="aiExpandBtn" onclick="toggleAIExpand()" title="Expand">⛶</button><button class="panel-close" onclick="toggleAI()">✕</button></div></div>
       <div class="ai-messages" id="aiMessages"></div>
       <input id="aiInput" placeholder="Ask something..." />
     </div>
@@ -747,17 +804,132 @@
 
       loadTasks();
 
-      // PETALS
-      const leaves = document.querySelector(".leaves");
-      for (let i = 0; i < 40; i++) {
-        const leaf = document.createElement("span");
-        const size = 6 + Math.random() * 6;
-        leaf.style.width = size + "px";
-        leaf.style.height = size + "px";
-        leaf.style.left = Math.random() * 100 + "vw";
-        leaf.style.animationDuration = 6 + Math.random() * 6 + "s";
-        leaf.style.animationDelay = Math.random() * 6 + "s";
-        leaves.appendChild(leaf);
+      // BACKGROUND SYSTEM
+      function applyBackground(type) {
+        const container = document.querySelector(".leaves");
+        container.innerHTML = "";
+        document.body.classList.remove("bg-grid");
+        const { r, g, b } = hexToRgb(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#4ade80");
+        const rgb = `${r},${g},${b}`;
+
+        if (type === "petals") {
+          for (let i = 0; i < 40; i++) {
+            const el = document.createElement("span");
+            const size = 6 + Math.random() * 6;
+            el.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}vw;animation-duration:${6+Math.random()*6}s;animation-delay:${Math.random()*6}s;background:linear-gradient(135deg,rgba(${rgb},0.8),rgba(${rgb},1));box-shadow:0 0 8px rgba(${rgb},0.4);`;
+            container.appendChild(el);
+          }
+        } else if (type === "particles") {
+          for (let i = 0; i < 60; i++) {
+            const el = document.createElement("div");
+            el.className = "particle";
+            const size = 2 + Math.random() * 4;
+            el.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}vw;background:rgba(${rgb},${0.3+Math.random()*0.5});animation-duration:${8+Math.random()*10}s;animation-delay:${Math.random()*10}s;`;
+            container.appendChild(el);
+          }
+        } else if (type === "stars") {
+          for (let i = 0; i < 80; i++) {
+            const el = document.createElement("div");
+            el.className = "star";
+            const size = 1 + Math.random() * 3;
+            el.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}vw;top:${Math.random()*100}vh;background:rgba(${rgb},0.8);animation-duration:${1.5+Math.random()*3}s;animation-delay:${Math.random()*3}s;`;
+            container.appendChild(el);
+          }
+        } else if (type === "grid") {
+          document.body.classList.add("bg-grid");
+        }
+        // "none" leaves container empty
+
+        if (type === "galaxy") {
+          const canvas = document.createElement("canvas");
+          canvas.id = "galaxyCanvas";
+          canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;";
+          container.appendChild(canvas);
+
+          let W = canvas.width = window.innerWidth;
+          let H = canvas.height = window.innerHeight;
+          const ctx = canvas.getContext("2d");
+
+          const stars = Array.from({ length: 90 }, () => ({
+            x: Math.random() * W, y: Math.random() * H,
+            vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25,
+            r: 0.8 + Math.random() * 1.8,
+            opacity: 0.4 + Math.random() * 0.6,
+          }));
+
+          let galaxyFrame;
+          function drawGalaxy() {
+            ctx.clearRect(0, 0, W, H);
+            const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+            const { r: cr, g: cg, b: cb } = hexToRgb(accent);
+
+            // Draw constellation lines
+            for (let i = 0; i < stars.length; i++) {
+              for (let j = i + 1; j < stars.length; j++) {
+                const dx = stars[i].x - stars[j].x;
+                const dy = stars[i].y - stars[j].y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 130) {
+                  ctx.beginPath();
+                  ctx.moveTo(stars[i].x, stars[i].y);
+                  ctx.lineTo(stars[j].x, stars[j].y);
+                  ctx.strokeStyle = `rgba(${cr},${cg},${cb},${0.18 * (1 - dist / 130)})`;
+                  ctx.lineWidth = 0.6;
+                  ctx.stroke();
+                }
+              }
+            }
+
+            // Draw stars
+            stars.forEach(s => {
+              ctx.beginPath();
+              ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+              ctx.fillStyle = `rgba(${cr},${cg},${cb},${s.opacity})`;
+              ctx.shadowColor = `rgba(${cr},${cg},${cb},0.8)`;
+              ctx.shadowBlur = 6;
+              ctx.fill();
+              ctx.shadowBlur = 0;
+
+              s.x += s.vx; s.y += s.vy;
+              if (s.x < 0) s.x = W; if (s.x > W) s.x = 0;
+              if (s.y < 0) s.y = H; if (s.y > H) s.y = 0;
+            });
+
+            galaxyFrame = requestAnimationFrame(drawGalaxy);
+          }
+          drawGalaxy();
+
+          window.addEventListener("resize", () => {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+          });
+
+          container._stopGalaxy = () => cancelAnimationFrame(galaxyFrame);
+        } else if (container._stopGalaxy) {
+          container._stopGalaxy();
+          container._stopGalaxy = null;
+        }
+
+        document.querySelectorAll(".bg-options button[data-bg]").forEach(b => b.classList.toggle("active", b.dataset.bg === type));
+        localStorage.setItem("bgType", type);
+      }
+
+      const savedBg = localStorage.getItem("bgType") || "petals";
+      applyBackground(savedBg);
+
+      // BG more toggle
+      let bgMoreOpen = false;
+      function toggleBgMore() {
+        bgMoreOpen = !bgMoreOpen;
+        const more = document.getElementById("bgOptionsMore");
+        const btn  = document.getElementById("bgMoreBtn");
+        const panel = document.getElementById("settingsPanel");
+        more.style.display = bgMoreOpen ? "flex" : "none";
+        btn.innerText = bgMoreOpen ? "−" : "+";
+        // expand/shrink panel height
+        panel.style.height = bgMoreOpen
+          ? Math.max(parseInt(panel.style.height) || panel.offsetHeight, panel.scrollHeight + 10) + "px"
+          : (JSON.parse(localStorage.getItem("panelLayout") || "{}").settings?.height ?? 400) + "px";
       }
 
       // CURSOR
@@ -913,7 +1085,9 @@
       let aiDragging = false, aiOffsetX = 0, aiOffsetY = 0;
 
       aiHeader.addEventListener("mousedown", (e) => {
+        if (e.target.classList.contains("panel-close")) return;
         aiDragging = true;
+        aiPanel.style.transition = "none";
         const rect = aiPanel.getBoundingClientRect();
         aiOffsetX = e.clientX - rect.left;
         aiOffsetY = e.clientY - rect.top;
@@ -927,7 +1101,35 @@
         aiPanel.style.top = e.clientY - aiOffsetY + "px";
       });
 
-      document.addEventListener("mouseup", () => (aiDragging = false));
+      document.addEventListener("mouseup", () => {
+        aiDragging = false;
+        aiPanel.style.transition = "";
+      });
+
+      // AI EXPAND
+      let aiIsExpanded = false;
+      let aiPrevStyle = {};
+      function toggleAIExpand() {
+        const panel = document.getElementById("aiPanel");
+        const btn = document.getElementById("aiExpandBtn");
+        if (!aiIsExpanded) {
+          aiPrevStyle = { left: panel.style.left, top: panel.style.top, width: panel.style.width, height: panel.style.height };
+          panel.classList.add("expanded");
+          btn.innerText = "⛶";
+          btn.title = "Collapse";
+          aiIsExpanded = true;
+        } else {
+          panel.classList.remove("expanded");
+          panel.style.left   = aiPrevStyle.left;
+          panel.style.top    = aiPrevStyle.top;
+          panel.style.width  = aiPrevStyle.width;
+          panel.style.height = aiPrevStyle.height;
+          panel.style.zIndex = "";
+          btn.innerText = "⛶";
+          btn.title = "Expand";
+          aiIsExpanded = false;
+        }
+      }
 
       // ===== SETTINGS =====
       function toggleSettings() {
@@ -973,6 +1175,7 @@
 
         updateFavicon(hex);
         localStorage.setItem("accentColor", hex);
+        applyBackground(localStorage.getItem("bgType") || "petals");
       }
 
       // SETTINGS DRAG
