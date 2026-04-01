@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Blossom</title>
+    <title>Bloscum</title>
     <link rel="icon" href="images/Untitled-removebg-preview.png" sizes="64x64" />
     <link rel="apple-touch-icon" href="images/Untitled-removebg-preview.png" />
 
@@ -17,9 +17,9 @@
         --bg: #020806;
         --text: #e8fff3;
         --muted: #7fae92;
-        --accent: #4ade80;
-        --glass: rgba(34, 197, 94, 0.08);
-        --border: rgba(34, 197, 94, 0.15);
+        --accent: #f9a8d4;
+        --glass: rgba(249, 168, 212, 0.08);
+        --border: rgba(249, 168, 212, 0.15);
       }
 
       * {
@@ -77,9 +77,12 @@
         max-width: 950px;
         padding: 30px;
         border-radius: 24px;
-        background: var(--glass);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(28px) saturate(160%);
+        -webkit-backdrop-filter: blur(28px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.08);
         position: absolute;
         cursor: grab;
       }
@@ -102,8 +105,9 @@
         margin-top: 20px;
         padding: 14px;
         border-radius: 12px;
-        border: 1px solid var(--border);
-        background: rgba(34, 197, 94, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(8px);
         color: white;
         outline: none;
       }
@@ -118,10 +122,12 @@
       .actions button {
         padding: 8px 14px;
         border-radius: 10px;
-        border: 1px solid var(--border);
-        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(8px);
         color: white;
         cursor: pointer;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
       }
 
       /* GRID */
@@ -134,8 +140,9 @@
       .widget {
         padding: 15px;
         border-radius: 14px;
-        background: rgba(34, 197, 94, 0.05);
-        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
       }
 
       /* BACKGROUNDS */
@@ -211,9 +218,12 @@
         height: 400px;
         min-width: 220px;
         min-height: 200px;
-        background: rgba(10, 20, 15, 0.9);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(28px) saturate(160%);
+        -webkit-backdrop-filter: blur(28px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.08);
         border-radius: 16px;
         display: none;
         flex-direction: column;
@@ -264,6 +274,76 @@
       }
       .panel-close:hover { color: var(--text); }
 
+      /* ── MESSAGE BUBBLES ── */
+      .msg-bubble { margin-bottom: 10px; display: flex; flex-direction: column; }
+      .msg-bubble.user { align-items: flex-end; }
+      .msg-bubble.ai   { align-items: flex-start; }
+      .msg-content {
+        max-width: 85%; padding: 8px 12px; font-size: 13.5px; line-height: 1.45;
+      }
+      .msg-bubble.user .msg-content {
+        background: rgba(255,255,255,0.08);
+        border-radius: 14px 14px 2px 14px;
+      }
+      .msg-bubble.ai .msg-content {
+        background: rgba(249,168,212,0.07);
+        border-radius: 14px 14px 14px 2px;
+      }
+      .msg-meta {
+        display: flex; align-items: center; gap: 5px;
+        margin-top: 3px; padding: 0 2px;
+        font-size: 10px; color: var(--muted); opacity: 0.7;
+      }
+      .msg-copy {
+        cursor: pointer; opacity: 0; transition: opacity 0.15s;
+        padding: 1px 5px; border-radius: 4px; font-size: 12px;
+        background: none; border: none; color: var(--muted);
+        margin-top: 0; width: auto;
+      }
+      .msg-bubble:hover .msg-copy { opacity: 1; }
+      .msg-copy:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+
+      /* ── HISTORY SIDEBAR ── */
+      .ai-history-sidebar {
+        position: absolute; inset: 0; border-radius: 16px; z-index: 20;
+        background: rgba(6, 12, 9, 0.75);
+        backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+        display: none; flex-direction: column; overflow: hidden;
+      }
+      .ai-history-sidebar.open { display: flex; }
+      .ai-history-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 12px; font-weight: 600; font-size: 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0;
+      }
+      .new-chat-btn {
+        margin: 8px 10px 4px; padding: 8px 12px; border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);
+        color: var(--text); cursor: pointer; font-size: 13px; font-family: Inter;
+        text-align: left; transition: background 0.15s; width: calc(100% - 20px);
+        margin-left: 10px; margin-right: 10px;
+      }
+      .new-chat-btn:hover { background: rgba(255,255,255,0.1); }
+      .ai-history-list { flex: 1; overflow-y: auto; padding: 4px 8px 8px; }
+      .ai-history-item {
+        display: flex; align-items: center; gap: 6px;
+        padding: 8px 10px; border-radius: 10px; cursor: pointer;
+        margin-bottom: 2px; transition: background 0.15s;
+      }
+      .ai-history-item:hover, .ai-history-item.active { background: rgba(255,255,255,0.06); }
+      .chat-title {
+        flex: 1; font-size: 13px; overflow: hidden;
+        text-overflow: ellipsis; white-space: nowrap; color: var(--text);
+      }
+      .chat-date { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+      .chat-del {
+        opacity: 0; background: none; border: none; color: var(--muted);
+        cursor: pointer; font-size: 11px; padding: 2px 5px; border-radius: 4px;
+        flex-shrink: 0; line-height: 1; margin-top: 0; width: auto;
+      }
+      .ai-history-item:hover .chat-del { opacity: 1; }
+      .chat-del:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+
       .ai-messages {
         flex: 1;
         padding: 10px;
@@ -273,10 +353,10 @@
 
       #aiInput {
         border: none;
-        border-top: 1px solid var(--border);
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
         padding: 14px 16px;
         outline: none;
-        background: rgba(34, 197, 94, 0.05);
+        background: rgba(255, 255, 255, 0.03);
         color: white;
         font-size: 14px;
         font-family: Inter;
@@ -290,9 +370,12 @@
         width: 240px;
         min-width: 200px;
         min-height: 120px;
-        background: rgba(10, 20, 15, 0.9);
-        backdrop-filter: blur(20px);
-        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(28px) saturate(160%);
+        -webkit-backdrop-filter: blur(28px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.45),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.08);
         border-radius: 16px;
         display: none;
         flex-direction: column;
@@ -567,7 +650,7 @@
               <circle r="7" fill="white" opacity="0.5"/>
             </g>
           </svg>
-          <span style="font-size:42px; font-weight:800; letter-spacing:0.2em; color:var(--accent); opacity:0.5; line-height:1;">BLOSSOM</span>
+          <span style="font-size:42px; font-weight:800; letter-spacing:0.2em; color:var(--accent); opacity:0.5; line-height:1;">BLOSCUM</span>
         </div>
       </div>
 
@@ -581,7 +664,7 @@
         <button onclick="window.open('https://github.com')">GitHub</button>
         <button onclick="addTask()">+ Task</button>
         <button onclick="toggleFocus()">Focus</button>
-        <button id="aiToggleBtn" onclick="toggleAI()">BLOSSOM-AI</button>
+        <button id="aiToggleBtn" onclick="toggleAI()">BLOSCUM-AI</button>
         <button onclick="toggleSettings()">Settings</button>
       </div>
 
@@ -623,7 +706,7 @@
         <div class="settings-label" style="margin-top:6px">Your Name</div>
         <input type="text" id="nameInput" placeholder="Enter your name..." />
         <div class="settings-label" style="margin-top:6px">AI Assistant Name</div>
-        <input type="text" id="aiNameInput" placeholder="e.g. BLOSSOM-AI, Nova..." />
+        <input type="text" id="aiNameInput" placeholder="e.g. BLOSCUM-AI, Nova..." />
       </div>
     </div>
 
@@ -665,7 +748,7 @@
           <div class="lp-body">Search, tasks &amp; shortcuts</div>
         </div>
         <div class="lp-preview" id="lp-jarvis">
-          <div class="lp-head">BLOSSOM-AI</div>
+          <div class="lp-head">BLOSCUM-AI</div>
           <div class="lp-body">AI chat panel</div>
         </div>
         <div class="lp-preview" id="lp-settings">
@@ -682,8 +765,41 @@
 
     <!-- JARVIS PANEL -->
     <div class="ai-panel" id="aiPanel">
-      <div class="ai-header"><span id="aiPanelName">BLOSSOM-AI</span> <div style="display:flex;gap:6px;"><button class="panel-close" id="aiExpandBtn" onclick="toggleAIExpand()" title="Expand">⛶</button><button class="panel-close" onclick="toggleAI()">✕</button></div></div>
-      <div class="ai-messages" id="aiMessages"></div>
+      <!-- History sidebar -->
+      <div class="ai-history-sidebar" id="aiHistorySidebar">
+        <div class="ai-history-head">
+          <span>Chat History</span>
+          <button class="panel-close" onclick="toggleHistory()">✕</button>
+        </div>
+        <button class="new-chat-btn" onclick="newChat()">＋ New Chat</button>
+        <div class="ai-history-list" id="aiHistoryList"></div>
+      </div>
+
+      <div class="ai-header">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="panel-close" onclick="toggleHistory()" title="History" style="font-size:15px;">☰</button>
+          <span id="aiPanelName">BLOSCUM-AI</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="panel-close" onclick="newChat()" title="New chat" style="font-size:15px;">✦</button>
+          <button class="panel-close" id="aiExpandBtn" onclick="toggleAIExpand()" title="Expand">⛶</button>
+          <button class="panel-close" onclick="toggleAI()">✕</button>
+        </div>
+      </div>
+      <div class="ai-messages" id="aiMessages">
+        <div id="aiPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;opacity:0.18;pointer-events:none;user-select:none;">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;">
+            <g transform="translate(50,50)">
+              <ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(0)"/>
+              <ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(72)"/>
+              <ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(144)"/>
+              <ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(216)"/>
+              <ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(288)"/>
+              <circle r="7" fill="white" opacity="0.5"/>
+            </g>
+          </svg>
+        </div>
+      </div>
       <input id="aiInput" placeholder="Ask something..." />
     </div>
 
@@ -809,7 +925,7 @@
         const container = document.querySelector(".leaves");
         container.innerHTML = "";
         document.body.classList.remove("bg-grid");
-        const { r, g, b } = hexToRgb(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#4ade80");
+        const { r, g, b } = hexToRgb(getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#f9a8d4");
         const rgb = `${r},${g},${b}`;
 
         if (type === "petals") {
@@ -995,6 +1111,106 @@
       const aiInput = document.getElementById("aiInput");
       const aiMessages = document.getElementById("aiMessages");
       const chatHistory = [];
+      let currentChatId = null;
+      let savedChats = JSON.parse(localStorage.getItem("bloscum_chats") || "[]");
+
+      const PLACEHOLDER_HTML = `<div id="aiPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;opacity:0.18;pointer-events:none;user-select:none;"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:64px;height:64px;"><g transform="translate(50,50)"><ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(0)"/><ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(72)"/><ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(144)"/><ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(216)"/><ellipse rx="15" ry="28" cy="-19" fill="#c8d6e0" opacity="0.9" transform="rotate(288)"/><circle r="7" fill="white" opacity="0.5"/></g></svg></div>`;
+
+      function genChatId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+      function saveCurrentChat() {
+        const bubbles = aiMessages.querySelectorAll(".msg-bubble");
+        if (!bubbles.length) return;
+        const messages = Array.from(bubbles).map(b => ({
+          role: b.classList.contains("user") ? "user" : "assistant",
+          sender: b.classList.contains("user") ? "You" : getAIName(),
+          text: b.querySelector(".msg-text").innerText,
+          time: b.querySelector(".msg-time")?.textContent || ""
+        }));
+        const title = messages.find(m => m.role === "user")?.text.slice(0, 40) || "Chat";
+        savedChats = JSON.parse(localStorage.getItem("bloscum_chats") || "[]");
+        if (currentChatId) {
+          const idx = savedChats.findIndex(c => c.id === currentChatId);
+          if (idx !== -1) savedChats[idx] = { ...savedChats[idx], title, messages, updated: Date.now() };
+        } else {
+          currentChatId = genChatId();
+          savedChats.unshift({ id: currentChatId, title, messages, created: Date.now(), updated: Date.now() });
+        }
+        localStorage.setItem("bloscum_chats", JSON.stringify(savedChats));
+      }
+
+      function newChat() {
+        saveCurrentChat();
+        currentChatId = null;
+        chatHistory.length = 0;
+        aiMessages.innerHTML = PLACEHOLDER_HTML;
+        document.getElementById("aiHistorySidebar").classList.remove("open");
+        aiInput.focus();
+      }
+
+      function toggleHistory() {
+        const sidebar = document.getElementById("aiHistorySidebar");
+        sidebar.classList.toggle("open");
+        if (sidebar.classList.contains("open")) renderHistory();
+      }
+
+      function renderHistory() {
+        const list = document.getElementById("aiHistoryList");
+        savedChats = JSON.parse(localStorage.getItem("bloscum_chats") || "[]");
+        if (!savedChats.length) {
+          list.innerHTML = `<p style="padding:14px 10px;color:var(--muted);font-size:12px;margin:0;">No saved chats yet.</p>`;
+          return;
+        }
+        list.innerHTML = "";
+        for (const chat of savedChats) {
+          const d = new Date(chat.updated || chat.created);
+          const dateStr = d.toLocaleDateString([], { month: "short", day: "numeric" });
+          const item = document.createElement("div");
+          item.className = "ai-history-item" + (chat.id === currentChatId ? " active" : "");
+          item.innerHTML = `<span class="chat-title">${chat.title}</span><span class="chat-date">${dateStr}</span><button class="chat-del" onclick="event.stopPropagation();deleteChat('${chat.id}')">✕</button>`;
+          item.addEventListener("click", () => loadChat(chat.id));
+          list.appendChild(item);
+        }
+      }
+
+      function loadChat(id) {
+        saveCurrentChat();
+        savedChats = JSON.parse(localStorage.getItem("bloscum_chats") || "[]");
+        const chat = savedChats.find(c => c.id === id);
+        if (!chat) return;
+        currentChatId = id;
+        chatHistory.length = 0;
+        aiMessages.innerHTML = "";
+        for (const m of chat.messages) {
+          addMessageRaw(m.sender, m.text, m.time);
+          chatHistory.push({ role: m.role, content: m.text });
+        }
+        document.getElementById("aiHistorySidebar").classList.remove("open");
+      }
+
+      function deleteChat(id) {
+        savedChats = savedChats.filter(c => c.id !== id);
+        if (currentChatId === id) currentChatId = null;
+        localStorage.setItem("bloscum_chats", JSON.stringify(savedChats));
+        renderHistory();
+      }
+
+      function copyMsg(el) {
+        const text = el.closest(".msg-bubble").querySelector(".msg-text").innerText;
+        navigator.clipboard.writeText(text);
+        el.textContent = "✓";
+        setTimeout(() => el.textContent = "⎘", 1500);
+      }
+
+      function addMessageRaw(sender, text, time) {
+        const isUser = sender === "You";
+        const div = document.createElement("div");
+        div.className = `msg-bubble ${isUser ? "user" : "ai"}`;
+        div.innerHTML = `<div class="msg-content"><span class="msg-text">${text}</span></div><div class="msg-meta"><span class="msg-time">${time || ""}</span>${!isUser ? `<button class="msg-copy" title="Copy" onclick="copyMsg(this)">⎘</button>` : ""}</div>`;
+        aiMessages.appendChild(div);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+        return div;
+      }
 
       aiInput.addEventListener("keydown", async function (e) {
         if (e.key !== "Enter") return;
@@ -1061,6 +1277,7 @@
 
           await new Promise(r => { const check = () => charQueue.length ? requestAnimationFrame(check) : r(); check(); });
           chatHistory.push({ role: "assistant", content: reply });
+          saveCurrentChat();
         } catch {
           thinking.querySelector(".msg-text").innerText = "Can’t reach the server. Make sure it’s running.";
         }
@@ -1070,12 +1287,10 @@
       });
 
       function addMessage(sender, text) {
-        const div = document.createElement("div");
-        div.style.marginBottom = "6px";
-        div.innerHTML = `<b>${sender}:</b> <span class="msg-text">${text}</span>`;
-        aiMessages.appendChild(div);
-        aiMessages.scrollTop = aiMessages.scrollHeight;
-        return div;
+        const placeholder = document.getElementById("aiPlaceholder");
+        if (placeholder) placeholder.remove();
+        const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        return addMessageRaw(sender, text, time);
       }
 
 
@@ -1256,7 +1471,7 @@
 
       // AI NAME INPUT
       function getAIName() {
-        return localStorage.getItem("aiName") || "BLOSSOM-AI";
+        return localStorage.getItem("aiName") || "BLOSCUM-AI";
       }
       function applyAIName(name) {
         document.getElementById("aiPanelName").innerText = name;
@@ -1266,7 +1481,7 @@
       aiNameInput.value = getAIName();
       applyAIName(getAIName());
       aiNameInput.addEventListener("input", function () {
-        const name = this.value.trim() || "BLOSSOM-AI";
+        const name = this.value.trim() || "BLOSCUM-AI";
         localStorage.setItem("aiName", name);
         applyAIName(name);
       });
@@ -1441,7 +1656,7 @@
         const url = "data:image/svg+xml," + encodeURIComponent(svg);
         document.querySelector("link[rel='icon']").href = url;
       }
-      updateFavicon("#4ade80");
+      updateFavicon("#f9a8d4");
 
       // autofocus
       document.getElementById("search").focus();
