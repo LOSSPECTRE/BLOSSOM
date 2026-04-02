@@ -47,9 +47,9 @@ const quickReplies = [
   { match: /^(afk)[\s!.]*$/i, reply: "Got it, catch you later." },
 
   // Identity
-  { match: /what('?s| is) your name|who are you|what are you/i, reply: "I'm BLOSCUM-AI, your personal assistant." },
+  { match: /what('?s| is) your name|who are you|what are you/i, reply: "I'm BLOSCOM-AI, your personal assistant." },
   { match: /who (made|created|built|designed) you/i, reply: "Ray built me into Bloscum. Pretty cool, right?" },
-  { match: /are you (an? )?(ai|robot|bot|machine|human|real)/i, reply: "I'm an AI — BLOSCUM-AI to be exact." },
+  { match: /are you (an? )?(ai|robot|bot|machine|human|real)/i, reply: "I'm an AI — BLOSCOM-AI to be exact." },
   { match: /are you (alive|sentient|conscious)/i, reply: "Not quite, but I'm as helpful as it gets!" },
   { match: /do you (have|got) (feelings|emotions)/i, reply: "I don't feel, but I care about being useful to you." },
   { match: /what can you do|what are your (features|abilities|capabilities)/i, reply: "I can answer questions, help you think, assist with tasks, and more. Just ask!" },
@@ -98,7 +98,7 @@ app.post("/api/jarvis", async (req, res) => {
       {
         role: "system",
         content:
-          "You are BLOSCUM-AI, a personal assistant inside Bloscum dashboard. Keep all replies short and direct — 1 to 3 sentences max. No bullet points, no lists, no long explanations unless the user specifically asks for detail.",
+          "You are BLOSCOM-AI, a personal assistant inside Bloscom dashboard. Keep all replies short and direct — 1 to 3 sentences max. No bullet points, no lists, no long explanations unless the user specifically asks for detail.",
       },
       ...history.map((item) => ({
         role: item.role,
@@ -155,7 +155,7 @@ app.post("/api/jarvis", async (req, res) => {
     res.write("data: [DONE]\n\n");
     res.end();
   } catch (error) {
-    console.error("BLOSCUM-AI error:", error);
+    console.error("BLOSCOM-AI error:", error);
     if (!res.headersSent) res.status(500).json({ error: "Something went wrong." });
   }
 });
