@@ -70,6 +70,86 @@
         border-radius: 50%;
       }
 
+      /* MERGED PANEL */
+      #mergedPanel {
+        display: none;
+        position: fixed;
+        z-index: 200;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.09);
+        border-radius: 24px;
+        box-shadow: 0 16px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+        backdrop-filter: blur(28px) saturate(160%);
+        overflow: hidden;
+        resize: both;
+        flex-direction: column;
+        min-width: 300px; min-height: 200px;
+      }
+      #mergedPanel.open { display: flex; }
+      #mergedHandle {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 8px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        cursor: grab; user-select: none; flex-shrink: 0;
+      }
+      #mergedHandle:active { cursor: grabbing; }
+      #mergedInner {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+      #mergedInner > .card,
+      #mergedInner > .ai-panel,
+      #mergedInner > .settings-panel {
+        position: static !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        max-height: none !important;
+        max-width: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-right: 1px solid rgba(255,255,255,0.06) !important;
+        resize: none !important;
+        backdrop-filter: none !important;
+        overflow: hidden !important;
+      }
+      #mergedInner > *:last-child { border-right: none !important; }
+      .merge-drop-target {
+        outline: 2px solid var(--accent) !important;
+        box-shadow: 0 0 28px rgba(249,168,212,0.18) !important;
+      }
+
+      /* CARD HEADER */
+      .card-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .card-bloscom {
+        font-size: 42px;
+        font-weight: 800;
+        letter-spacing: 0.2em;
+        color: var(--accent);
+        opacity: 0.5;
+        line-height: 1;
+      }
+      /* Inside merged panel — BLOSCOM on its own line, bigger */
+      #mergedInner .card-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      #mergedInner .card-bloscom {
+        font-size: 52px;
+        opacity: 0.4;
+        letter-spacing: 0.25em;
+      }
+
       /* CARD */
       .card {
         width: 95%;
@@ -143,7 +223,47 @@
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.07);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        position: relative;
       }
+      .widget-merge-btn {
+        position: absolute; top: 10px; right: 10px;
+        background: none; border: 1px solid var(--border);
+        border-radius: 6px; color: var(--muted);
+        font-size: 11px; padding: 2px 7px; cursor: pointer;
+        opacity: 0; transition: opacity 0.15s;
+      }
+      .widget:hover .widget-merge-btn { opacity: 1; }
+      .widget-merge-btn.selecting {
+        border-color: var(--accent); color: var(--accent); opacity: 1;
+      }
+      .widget.merge-target {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent), inset 0 1px 0 rgba(255,255,255,0.05);
+        cursor: pointer;
+      }
+      /* MERGED PANEL TABS */
+      .widget-tabs {
+        display: flex; gap: 4px; margin-bottom: 12px;
+        border-bottom: 1px solid var(--border); padding-bottom: 8px;
+      }
+      .widget-tab {
+        padding: 3px 12px; border-radius: 8px; font-size: 12px;
+        font-weight: 600; cursor: pointer; border: none;
+        background: none; color: var(--muted); transition: all 0.15s;
+      }
+      .widget-tab.active {
+        background: rgba(255,255,255,0.08); color: var(--text);
+      }
+      .widget-tab-content { display: none; }
+      .widget-tab-content.active { display: block; }
+      .widget-unmerge-btn {
+        position: absolute; top: 10px; right: 10px;
+        background: none; border: 1px solid var(--border);
+        border-radius: 6px; color: var(--muted);
+        font-size: 11px; padding: 2px 7px; cursor: pointer;
+        opacity: 0; transition: opacity 0.15s;
+      }
+      .widget:hover .widget-unmerge-btn { opacity: 1; }
 
       /* BACKGROUNDS */
       .bg-art {
@@ -253,6 +373,24 @@
       .focus-mode #notes {
         display: none;
       }
+      #exitFocusBtn {
+        display: none;
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        padding: 10px 20px;
+        background: var(--glass);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        backdrop-filter: blur(12px);
+        letter-spacing: 0.05em;
+      }
+      .focus-mode #exitFocusBtn { display: block; }
 
       /* ===== JARVIS ===== */
       .ai-panel {
@@ -521,15 +659,102 @@
       }
 
       #aiInput {
-        border: none;
-        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        width: calc(100% - 20px) !important;
+        margin: 10px !important;
         padding: 14px 16px;
+        border-radius: 12px;
         outline: none;
-        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        background: rgba(255, 255, 255, 0.05);
         color: white;
         font-size: 14px;
         font-family: Inter;
+        box-sizing: border-box;
       }
+
+      /* ===== SUBSCRIPTION MODAL ===== */
+      .sub-overlay {
+        position: fixed; inset: 0; z-index: 500;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(6px);
+        display: none; align-items: center; justify-content: center;
+      }
+      .sub-overlay.open { display: flex; }
+      .sub-modal {
+        position: relative;
+        background: rgba(10,20,15,0.95);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 24px;
+        padding: 36px 32px;
+        width: 680px;
+        max-width: 95vw;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07);
+      }
+      .sub-header {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+      .sub-header h2 {
+        font-size: 22px; font-weight: 800;
+        color: var(--text); margin-bottom: 6px;
+      }
+      .sub-header p { font-size: 13px; color: var(--muted); }
+      .sub-plans {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .sub-plan {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px 16px;
+        display: flex; flex-direction: column; gap: 12px;
+        position: relative;
+        transition: border-color 0.2s;
+      }
+      .sub-plan.popular {
+        border-color: var(--accent);
+        box-shadow: 0 0 24px rgba(249,168,212,0.08);
+      }
+      .sub-plan-badge {
+        position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+        background: var(--accent); color: #000;
+        font-size: 10px; font-weight: 700;
+        padding: 2px 12px; border-radius: 20px;
+        letter-spacing: 0.08em; white-space: nowrap;
+      }
+      .sub-plan-name {
+        font-size: 13px; font-weight: 700;
+        color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;
+      }
+      .sub-plan-price {
+        font-size: 30px; font-weight: 800; color: var(--text); line-height: 1;
+      }
+      .sub-plan-price span { font-size: 13px; font-weight: 400; color: var(--muted); }
+      .sub-plan-features {
+        list-style: none; display: flex; flex-direction: column; gap: 7px;
+        font-size: 12.5px; color: var(--muted); flex: 1;
+      }
+      .sub-plan-features li::before { content: "✓ "; color: var(--accent); font-weight: 700; }
+      .sub-plan-features li.no::before { content: "✕ "; color: rgba(255,255,255,0.2); }
+      .sub-plan-features li.no { opacity: 0.4; }
+      .sub-plan-btn {
+        width: 100%; padding: 10px;
+        border-radius: 10px; font-size: 13px; font-weight: 600;
+        cursor: pointer; border: 1px solid var(--border);
+        background: rgba(255,255,255,0.05); color: var(--text);
+        transition: all 0.2s;
+      }
+      .sub-plan.popular .sub-plan-btn {
+        background: var(--accent); color: #000; border-color: var(--accent);
+      }
+      .sub-plan-btn:hover { opacity: 0.85; }
+      .sub-close {
+        display: block; text-align: center; margin-top: 20px;
+        font-size: 12px; color: var(--muted); cursor: pointer;
+        opacity: 0.6;
+      }
+      .sub-close:hover { opacity: 1; }
 
       /* ===== SETTINGS PANEL ===== */
       .settings-panel {
@@ -864,62 +1089,131 @@
   </head>
 
   <body>
+    <button id="exitFocusBtn" onclick="toggleFocus()">✕ Exit Focus</button>
     <div class="cursor-dot"></div>
     <div class="cursor-ring"></div>
 
     <div class="bg-art"><div class="leaves"></div></div>
 
-    <div class="card">
-      <div
-        style="
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        "
-      >
+    <div class="card" id="mainCard">
+      <div class="card-header-row">
         <div>
           <h1 id="greeting"></h1>
           <div class="time" id="time"></div>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px">
-          <span
-            style="
-              font-size: 42px;
-              font-weight: 800;
-              letter-spacing: 0.2em;
-              color: var(--accent);
-              opacity: 0.5;
-              line-height: 1;
-            "
-            >BLOSCOM</span
-          >
-        </div>
+        <span class="card-bloscom">BLOSCOM</span>
       </div>
 
+      <div id="mainBody">
       <input id="search" placeholder="Search or type a command..." />
 
       <div class="actions">
-        <button onclick="window.open('https://chat.openai.com')">
-          ChatGPT
-        </button>
-        <button onclick="window.open('https://youtube.com')">YouTube</button>
-        <button onclick="window.open('https://github.com')">GitHub</button>
+        <div id="quickLinks" style="display:contents;"></div>
+        <button onclick="toggleLinksEditor()" title="Edit shortcuts">＋ Link</button>
         <button onclick="addTask()">+ Task</button>
         <button onclick="toggleFocus()">Focus</button>
         <button id="aiToggleBtn" onclick="toggleAI()">BLOSCOM-AI</button>
         <button onclick="toggleSettings()">Settings</button>
+        <button onclick="toggleSub()" style="border-color:var(--accent);color:var(--accent);">✦ Upgrade</button>
       </div>
 
-      <div class="grid">
-        <div class="widget">
+      <div class="grid" id="widgetGrid">
+        <div class="widget" id="widget-weather" data-label="Weather">
+          <button class="widget-merge-btn" onclick="startMerge('widget-weather')">⊕ Merge</button>
           <b>🌤 Weather</b>
           <div>Colombo: 30°C</div>
         </div>
-        <div class="widget">
+        <div class="widget" id="widget-tasks" data-label="Tasks">
+          <button class="widget-merge-btn" onclick="startMerge('widget-tasks')">⊕ Merge</button>
           <b>📝 Tasks</b>
           <ul id="tasks"></ul>
         </div>
       </div>
+      </div><!-- end mainBody -->
+    </div>
+
+    <!-- SUBSCRIPTION MODAL -->
+    <div class="sub-overlay" id="subModal">
+      <div class="sub-modal">
+        <button onclick="toggleSub()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+        <div class="sub-header">
+          <h2>Choose your plan</h2>
+          <p>Unlock the full Bloscom experience</p>
+        </div>
+        <div class="sub-plans">
+          <!-- FREE -->
+          <div class="sub-plan">
+            <div class="sub-plan-name">Free</div>
+            <div class="sub-plan-price">$0 <span>/ month</span></div>
+            <ul class="sub-plan-features">
+              <li>Basic AI chat</li>
+              <li>10 messages / day</li>
+              <li>1 background theme</li>
+              <li class="no">Chat history</li>
+              <li class="no">Priority responses</li>
+              <li class="no">Custom AI name</li>
+            </ul>
+            <button class="sub-plan-btn">Current Plan</button>
+          </div>
+          <!-- PRO -->
+          <div class="sub-plan popular">
+            <div class="sub-plan-badge">MOST POPULAR</div>
+            <div class="sub-plan-name">Pro</div>
+            <div class="sub-plan-price">$9 <span>/ month</span></div>
+            <ul class="sub-plan-features">
+              <li>Unlimited AI chat</li>
+              <li>Full chat history</li>
+              <li>All background themes</li>
+              <li>Priority responses</li>
+              <li>Custom AI name</li>
+              <li class="no">API access</li>
+            </ul>
+            <button class="sub-plan-btn">Upgrade to Pro</button>
+          </div>
+          <!-- MAX -->
+          <div class="sub-plan popular">
+            <div class="sub-plan-badge">BEST</div>
+            <div class="sub-plan-name">Max</div>
+            <div class="sub-plan-price">$19 <span>/ month</span></div>
+            <ul class="sub-plan-features">
+              <li>Everything in Pro</li>
+              <li>API access</li>
+              <li>Early features</li>
+              <li>Multiple AI models</li>
+              <li>Custom integrations</li>
+              <li>Priority support</li>
+            </ul>
+            <button class="sub-plan-btn">Upgrade to Max</button>
+          </div>
+        </div>
+        <span class="sub-close" onclick="toggleSub()">No thanks, continue with Free</span>
+      </div>
+    </div>
+
+    <!-- LINKS EDITOR -->
+    <div class="sub-overlay" id="linksModal">
+      <div class="sub-modal" style="width:420px;">
+        <button onclick="toggleLinksEditor()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+        <div class="sub-header">
+          <h2>Quick Links</h2>
+          <p>Add your favourite sites to the action bar</p>
+        </div>
+        <div id="linksList" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;margin-bottom:16px;"></div>
+        <div style="display:flex;gap:8px;">
+          <input id="linkNameInput" placeholder="Name (e.g. YouTube)" style="flex:1;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);font-size:13px;"/>
+          <input id="linkUrlInput" placeholder="URL (e.g. https://youtube.com)" style="flex:2;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);font-size:13px;"/>
+          <button onclick="addLink()" style="padding:8px 14px;border-radius:10px;background:var(--accent);color:#000;border:none;font-weight:700;cursor:pointer;">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MERGED PANEL -->
+    <div id="mergedPanel">
+      <div id="mergedHandle">
+        <span style="font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.08em;">BLOSCOM</span>
+        <button onclick="unmergeAll()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 4px;" title="Split panels">⊖ Split</button>
+      </div>
+      <div id="mergedInner"></div>
     </div>
 
     <!-- SETTINGS PANEL -->
@@ -928,7 +1222,7 @@
         Settings
         <button class="panel-close" onclick="toggleSettings()">✕</button>
       </div>
-      <div class="settings-body">
+      <div class="settings-body" id="settingsBody">
         <div class="settings-label">Accent Color</div>
         <div class="hue-bar" id="hueBar">
           <div class="hue-indicator" id="hueIndicator"></div>
@@ -1090,6 +1384,7 @@
           <button class="panel-close" onclick="toggleAI()">✕</button>
         </div>
       </div>
+      <div id="aiBody" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
       <div class="ai-messages" id="aiMessages">
         <div
           id="aiPlaceholder"
@@ -1117,6 +1412,7 @@
         </div>
       </div>
       <input id="aiInput" placeholder="Ask something..." />
+      </div><!-- end aiBody -->
     </div>
 
     <script>
@@ -1706,9 +2002,14 @@
         if (!aiDragging) return;
         aiPanel.style.left = e.clientX - aiOffsetX + "px";
         aiPanel.style.top = e.clientY - aiOffsetY + "px";
+        showMergeHint('ai', true);
       });
 
       document.addEventListener("mouseup", () => {
+        if (aiDragging) {
+          showMergeHint('ai', false);
+          checkMergeOnDrop('ai');
+        }
         aiDragging = false;
         aiPanel.style.transition = "";
       });
@@ -1741,6 +2042,298 @@
           btn.title = "Expand";
           aiIsExpanded = false;
         }
+      }
+
+      // ===== QUICK LINKS =====
+      const DEFAULT_LINKS = [
+        { name: "Google",  url: "https://google.com" },
+        { name: "YouTube", url: "https://youtube.com" },
+      ];
+
+      function getLinks() {
+        const saved = localStorage.getItem("quickLinks");
+        return saved ? JSON.parse(saved) : DEFAULT_LINKS;
+      }
+      function saveLinks(links) {
+        localStorage.setItem("quickLinks", JSON.stringify(links));
+      }
+      function faviconUrl(url) {
+        try {
+          const domain = new URL(url).hostname;
+          return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+        } catch { return ''; }
+      }
+      function renderQuickLinks() {
+        const links = getLinks();
+        const container = document.getElementById("quickLinks");
+        container.innerHTML = links.map((l) => {
+          const icon = faviconUrl(l.url);
+          return `<button onclick="window.open('${l.url}','_blank')" style="display:flex;align-items:center;gap:6px;">
+            <img src="${icon}" style="width:14px;height:14px;border-radius:3px;flex-shrink:0;" onerror="this.style.display='none'"/>
+            ${l.name}
+          </button>`;
+        }).join("");
+      }
+      function renderLinksList() {
+        const links = getLinks();
+        const list = document.getElementById("linksList");
+        if (!links.length) { list.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px;">No links yet.</div>`; return; }
+        list.innerHTML = links.map((l, i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid var(--border);">
+            <span style="flex:1;font-size:13px;font-weight:600;">${l.name}</span>
+            <span style="flex:2;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.url}</span>
+            <button onclick="removeLink(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px;">✕</button>
+          </div>`).join("");
+      }
+      function addLink() {
+        const name = document.getElementById("linkNameInput").value.trim();
+        let url = document.getElementById("linkUrlInput").value.trim();
+        if (!name || !url) return;
+        if (!url.startsWith("http")) url = "https://" + url;
+        const links = getLinks();
+        links.push({ name, url });
+        saveLinks(links);
+        document.getElementById("linkNameInput").value = "";
+        document.getElementById("linkUrlInput").value = "";
+        renderQuickLinks();
+        renderLinksList();
+      }
+      function removeLink(i) {
+        const links = getLinks();
+        links.splice(i, 1);
+        saveLinks(links);
+        renderQuickLinks();
+        renderLinksList();
+      }
+      function toggleLinksEditor() {
+        document.getElementById("linksModal").classList.toggle("open");
+        renderLinksList();
+      }
+      renderQuickLinks();
+
+      // ===== DRAG-TO-MERGE SYSTEM =====
+      const PANELS = {
+        main:     { el: ()=> document.getElementById('mainCard') },
+        ai:       { el: ()=> document.getElementById('aiPanel') },
+        settings: { el: ()=> document.getElementById('settingsPanel') },
+      };
+      const activeMerges = [];
+
+      function overlaps(a, b) {
+        const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+        return !(ra.right < rb.left || ra.left > rb.right || ra.bottom < rb.top || ra.top > rb.bottom);
+      }
+
+      function dropSide(draggedEl, targetEl) {
+        const dr = draggedEl.getBoundingClientRect();
+        const tr = targetEl.getBoundingClientRect();
+        const dragCx = dr.left + dr.width / 2;
+        const dragCy = dr.top  + dr.height / 2;
+        const dx = dragCx - (tr.left + tr.width  / 2);
+        const dy = dragCy - (tr.top  + tr.height / 2);
+        return Math.abs(dx) > Math.abs(dy)
+          ? (dx > 0 ? 'right' : 'left')
+          : (dy > 0 ? 'bottom' : 'top');
+      }
+
+      function showMergeHint(draggedId, show) {
+        for (const [tid, cfg] of Object.entries(PANELS)) {
+          if (tid === draggedId) continue;
+          const el = cfg.el();
+          if (el && el.style.display !== 'none') el.classList.toggle('merge-drop-target', show);
+        }
+        const mp = document.getElementById('mergedPanel');
+        if (mp.classList.contains('open')) mp.classList.toggle('merge-drop-target', show);
+      }
+
+      function checkMergeOnDrop(draggedId) {
+        const dragged = PANELS[draggedId].el();
+        const mp = document.getElementById('mergedPanel');
+
+        // drop onto existing merged panel — just add it
+        if (mp.classList.contains('open') && overlaps(dragged, mp)) {
+          const side = dropSide(dragged, mp);
+          const inner = document.getElementById('mergedInner');
+          inner.style.flexDirection = (side === 'top' || side === 'bottom') ? 'column' : 'row';
+          addToMerged(draggedId, side === 'left' || side === 'top');
+          saveMergeState();
+          return;
+        }
+
+        // drop onto another panel — start fresh merge
+        for (const [tid, cfg] of Object.entries(PANELS)) {
+          if (tid === draggedId) continue;
+          const target = cfg.el();
+          if (!target || target.style.display === 'none') continue;
+          if (!overlaps(dragged, target)) continue;
+
+          const side = dropSide(dragged, target);
+          const isRow = side === 'left' || side === 'right';
+          const dr = dragged.getBoundingClientRect();
+          const tr = target.getBoundingClientRect();
+
+          mp.style.left   = tr.left + 'px';
+          mp.style.top    = tr.top  + 'px';
+          mp.style.right  = 'auto';
+          mp.style.bottom = 'auto';
+          mp.style.width  = isRow   ? (tr.width + dr.width)  + 'px' : Math.max(tr.width, dr.width)   + 'px';
+          mp.style.height = isRow   ? Math.max(tr.height, dr.height) + 'px' : (tr.height + dr.height) + 'px';
+
+          document.getElementById('mergedInner').style.flexDirection = isRow ? 'row' : 'column';
+
+          // order: dragged before/after target based on side
+          if (side === 'left' || side === 'top') {
+            addToMerged(draggedId, true);
+            addToMerged(tid, false);
+          } else {
+            addToMerged(tid, true);
+            addToMerged(draggedId, false);
+          }
+          saveMergeState();
+          return;
+        }
+      }
+
+      function addToMerged(id, prepend = false) {
+        if (activeMerges.includes(id)) return;
+        const el = PANELS[id].el();
+        if (!el) return;
+        const inner = document.getElementById('mergedInner');
+        if (prepend && inner.firstChild) inner.insertBefore(el, inner.firstChild);
+        else inner.appendChild(el);
+        activeMerges.push(id);
+        document.getElementById('mergedPanel').classList.add('open');
+      }
+
+      function unmergeAll() {
+        const mp = document.getElementById('mergedPanel');
+        // restore panels to body
+        activeMerges.forEach(id => {
+          const el = PANELS[id].el();
+          if (el) { document.body.appendChild(el); el.style.display = ''; }
+        });
+        activeMerges.length = 0;
+        mp.classList.remove('open');
+        localStorage.removeItem('mergeState');
+      }
+
+      function saveMergeState() {
+        const mp = document.getElementById('mergedPanel');
+        localStorage.setItem('mergeState', JSON.stringify({
+          panels: [...activeMerges],
+          dir:    document.getElementById('mergedInner').style.flexDirection || 'row',
+          left:   mp.style.left,  top:    mp.style.top,
+          width:  mp.style.width, height: mp.style.height,
+        }));
+      }
+
+      function restoreMergeState() {
+        const saved = localStorage.getItem('mergeState');
+        if (!saved) return;
+        try {
+          const s = JSON.parse(saved);
+          if (!s.panels?.length) return;
+          const mp = document.getElementById('mergedPanel');
+          mp.style.left = s.left; mp.style.top = s.top;
+          mp.style.width = s.width; mp.style.height = s.height;
+          mp.style.right = 'auto'; mp.style.bottom = 'auto';
+          document.getElementById('mergedInner').style.flexDirection = s.dir;
+          s.panels.forEach(id => addToMerged(id, false));
+        } catch(e) { localStorage.removeItem('mergeState'); }
+      }
+      restoreMergeState();
+
+      // drag merged panel by handle
+      (function(){
+        const mp = document.getElementById('mergedPanel');
+        const handle = document.getElementById('mergedHandle');
+        let dx=0, dy=0, on=false;
+        handle.addEventListener('mousedown', e => {
+          if (e.target.tagName === 'BUTTON') return;
+          on = true;
+          const r = mp.getBoundingClientRect();
+          dx = e.clientX - r.left; dy = e.clientY - r.top;
+        });
+        document.addEventListener('mousemove', e => {
+          if (!on) return;
+          mp.style.left=(e.clientX-dx)+'px'; mp.style.top=(e.clientY-dy)+'px'; mp.style.right='auto';
+        });
+        document.addEventListener('mouseup', () => { if(on) { on=false; saveMergeState(); } });
+      })();
+
+      // ===== PANEL MERGE =====
+      let mergeSource = null;
+
+      function startMerge(id) {
+        if (mergeSource === id) { cancelMerge(); return; }
+        if (mergeSource) { doMerge(mergeSource, id); return; }
+        mergeSource = id;
+        document.querySelector(`#${id} .widget-merge-btn`).classList.add("selecting");
+        document.querySelectorAll(".widget").forEach(w => {
+          if (w.id !== id) w.classList.add("merge-target");
+        });
+        document.querySelectorAll(".merge-target").forEach(w => {
+          w.addEventListener("click", onMergeTargetClick);
+        });
+      }
+
+      function onMergeTargetClick(e) {
+        doMerge(mergeSource, this.id);
+      }
+
+      function cancelMerge() {
+        if (!mergeSource) return;
+        document.querySelector(`#${mergeSource} .widget-merge-btn`)?.classList.remove("selecting");
+        document.querySelectorAll(".merge-target").forEach(w => {
+          w.classList.remove("merge-target");
+          w.removeEventListener("click", onMergeTargetClick);
+        });
+        mergeSource = null;
+      }
+
+      function doMerge(idA, idB) {
+        const wA = document.getElementById(idA);
+        const wB = document.getElementById(idB);
+        if (!wA || !wB) return;
+        const labelA = wA.dataset.label;
+        const labelB = wB.dataset.label;
+        const contentA = wA.innerHTML.replace(/<button class="widget-merge-btn"[^>]*>.*?<\/button>/s, "").trim();
+        const contentB = wB.innerHTML.replace(/<button class="widget-merge-btn"[^>]*>.*?<\/button>/s, "").trim();
+
+        wA.innerHTML = `
+          <button class="widget-unmerge-btn" onclick="doUnmerge('${idA}','${idB}')">⊖ Unmerge</button>
+          <div class="widget-tabs">
+            <button class="widget-tab active" onclick="switchTab(this,'tab-${idA}-a')"> ${labelA}</button>
+            <button class="widget-tab" onclick="switchTab(this,'tab-${idA}-b')">${labelB}</button>
+          </div>
+          <div class="widget-tab-content active" id="tab-${idA}-a">${contentA}</div>
+          <div class="widget-tab-content" id="tab-${idA}-b">${contentB}</div>`;
+        wA.dataset.mergedWith = idB;
+        wB.style.display = "none";
+        cancelMerge();
+      }
+
+      function switchTab(btn, tabId) {
+        const widget = btn.closest(".widget");
+        widget.querySelectorAll(".widget-tab").forEach(t => t.classList.remove("active"));
+        widget.querySelectorAll(".widget-tab-content").forEach(t => t.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(tabId).classList.add("active");
+      }
+
+      function doUnmerge(idA, idB) {
+        const wA = document.getElementById(idA);
+        const wB = document.getElementById(idB);
+        const contentA = document.getElementById(`tab-${idA}-a`).innerHTML;
+        const contentB = document.getElementById(`tab-${idA}-b`).innerHTML;
+        wA.innerHTML = `<button class="widget-merge-btn" onclick="startMerge('${idA}')">⊕ Merge</button>${contentA}`;
+        wB.innerHTML = `<button class="widget-merge-btn" onclick="startMerge('${idB}')">⊕ Merge</button>${contentB}`;
+        wB.style.display = "";
+        delete wA.dataset.mergedWith;
+      }
+
+      function toggleSub() {
+        document.getElementById("subModal").classList.toggle("open");
       }
 
       // ===== SETTINGS =====
@@ -1812,9 +2405,16 @@
         if (!sDragging) return;
         settingsPanel.style.left = e.clientX - sOffsetX + "px";
         settingsPanel.style.top = e.clientY - sOffsetY + "px";
+        showMergeHint('settings', true);
       });
 
-      document.addEventListener("mouseup", () => (sDragging = false));
+      document.addEventListener("mouseup", () => {
+        if (sDragging) {
+          showMergeHint('settings', false);
+          checkMergeOnDrop('settings');
+        }
+        sDragging = false;
+      });
 
       // HUE BAR
       function hslToHex(h, s, l) {
