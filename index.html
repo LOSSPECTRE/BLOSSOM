@@ -6,10 +6,65 @@
     <title>Bloscom</title>
     <link rel="icon" href="logo_black_white_even_more_front.png" type="image/png" sizes="512x512" />
 
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet"/>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+      import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+      import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAxhwk3cq-R86s4EqKdkaZxoT3ZX_6hHek",
+        authDomain: "bloscom-ai.firebaseapp.com",
+        projectId: "bloscom-ai",
+        storageBucket: "bloscom-ai.firebasestorage.app",
+        messagingSenderId: "33982788",
+        appId: "1:33982788:web:84fd47557a42d1544f2f11",
+      };
+
+      const fbApp  = initializeApp(firebaseConfig);
+      const auth   = getAuth(fbApp);
+      const dbFs   = getFirestore(fbApp);
+      const gProvider = new GoogleAuthProvider();
+
+      window._bloscomAuth = { auth, dbFs, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, gProvider, doc, getDoc };
+
+      onAuthStateChanged(auth, async user => {
+        if (user) {
+          window._firebaseUser = user;
+          const snap = await getDoc(doc(dbFs, "users", user.uid));
+          window._userPlan = snap.exists() ? (snap.data().plan || "free") : "free";
+          const badge = document.getElementById("userBadge");
+          if (badge) { badge.textContent = user.displayName || user.email.split("@")[0]; badge.style.display = "flex"; }
+          const planBadge = document.getElementById("planBadge");
+          if (planBadge) { planBadge.textContent = window._userPlan.toUpperCase(); planBadge.style.display = "inline"; }
+          document.getElementById("authModal")?.style && (document.getElementById("authModal").style.display = "none");
+        } else {
+          window._firebaseUser = null;
+          window._userPlan = "free";
+          const badge = document.getElementById("userBadge");
+          if (badge) badge.style.display = "none";
+        }
+      });
+
+      window.bloscomSignIn = async (email, password) => {
+        const { auth, signInWithEmailAndPassword } = window._bloscomAuth;
+        try { await signInWithEmailAndPassword(auth, email, password); closeAuthModal(); }
+        catch(e) { document.getElementById("authError").textContent = e.message; }
+      };
+      window.bloscomSignUp = async (email, password) => {
+        const { auth, createUserWithEmailAndPassword } = window._bloscomAuth;
+        try { await createUserWithEmailAndPassword(auth, email, password); closeAuthModal(); }
+        catch(e) { document.getElementById("authError").textContent = e.message; }
+      };
+      window.bloscomGoogleSignIn = async () => {
+        const { auth, signInWithPopup, gProvider } = window._bloscomAuth;
+        try { await signInWithPopup(auth, gProvider); closeAuthModal(); }
+        catch(e) { document.getElementById("authError").textContent = e.message; }
+      };
+      window.bloscomSignOut = async () => {
+        await window._bloscomAuth.signOut(window._bloscomAuth.auth);
+      };
+    </script>
 
     <style>
       :root {
@@ -122,6 +177,145 @@
       .merge-drop-target {
         outline: 2px solid var(--accent) !important;
         box-shadow: 0 0 28px rgba(249,168,212,0.18) !important;
+      }
+
+      /* AUTH MODAL */
+      .auth-overlay {
+        position: fixed; inset: 0; z-index: 600;
+        background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+        display: none; align-items: center; justify-content: center;
+      }
+      .auth-overlay.open { display: flex; }
+      .auth-box {
+        background: rgba(10,20,15,0.97);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px; padding: 36px 32px; width: 360px;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+        display: flex; flex-direction: column; gap: 14px;
+      }
+      .auth-box h2 { margin: 0; font-size: 20px; font-weight: 800; text-align: center; }
+      .auth-box input {
+        width: 100%; padding: 11px 14px; border-radius: 10px;
+        border: 1px solid var(--border); background: rgba(255,255,255,0.05);
+        color: var(--text); font-size: 13px; margin: 0;
+        box-sizing: border-box;
+      }
+      .auth-btn {
+        width: 100%; padding: 11px; border-radius: 10px;
+        font-size: 13px; font-weight: 700; cursor: pointer; border: none;
+        background: var(--accent); color: #000;
+      }
+      .auth-btn.secondary {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid var(--border); color: var(--text);
+      }
+      .auth-google-btn {
+        width: 100%; padding: 11px; border-radius: 10px;
+        font-size: 13px; font-weight: 600; cursor: pointer;
+        border: 1px solid var(--border); background: rgba(255,255,255,0.05);
+        color: var(--text); display: flex; align-items: center; justify-content: center; gap: 8px;
+      }
+      .auth-divider { text-align: center; font-size: 11px; color: var(--muted); }
+      .auth-switch { text-align: center; font-size: 12px; color: var(--muted); cursor: pointer; }
+      .auth-switch span { color: var(--accent); text-decoration: underline; }
+      #authError { color: #f87171; font-size: 12px; text-align: center; min-height: 16px; }
+      #userBadge {
+        display: none; align-items: center; gap: 6px;
+        padding: 6px 12px; border-radius: 10px;
+        border: 1px solid var(--border); background: rgba(255,255,255,0.05);
+        font-size: 12px; font-weight: 600; cursor: pointer;
+      }
+      #planBadge {
+        display: none; font-size: 9px; font-weight: 800;
+        background: var(--accent); color: #000;
+        padding: 1px 6px; border-radius: 6px; letter-spacing: 0.05em;
+      }
+
+      /* SAKURA MODE — pink borders on everything */
+      body.bg-sakura * {
+        border-color: rgba(200, 80, 120, 0.4) !important;
+      }
+      body.bg-sakura .card,
+      body.bg-sakura .ai-panel,
+      body.bg-sakura .settings-panel,
+      body.bg-sakura #mergedPanel,
+      body.bg-sakura .widget,
+      body.bg-sakura .ai-history-sidebar,
+      body.bg-sakura .sub-modal,
+      body.bg-sakura .tmodal-box,
+      body.bg-sakura #linksModal .sub-modal {
+        border: 2px solid rgba(255, 120, 170, 0.95) !important;
+        box-shadow: 0 8px 40px rgba(160,60,90,0.3), inset 0 1px 0 rgba(255,255,255,0.5), 0 0 12px rgba(255,120,170,0.4) !important;
+        background: rgba(200,150,175,0.72) !important;
+      }
+      body.bg-sakura .widget { background: rgba(195,145,168,0.68) !important; }
+      body.bg-sakura,
+      body.bg-sakura * {
+        color: #1a0a10 !important;
+      }
+      body.bg-sakura input,
+      body.bg-sakura #aiInput,
+      body.bg-sakura #search {
+        border: 1.5px solid rgba(200, 80, 120, 0.5) !important;
+        background: rgba(255,225,238,0.5) !important;
+      }
+      body.bg-sakura .actions button,
+      body.bg-sakura .panel-close,
+      body.bg-sakura .new-chat-btn,
+      body.bg-sakura .bg-options button,
+      body.bg-sakura .sub-plan,
+
+      body.bg-sakura .msg-bubble.user .msg-content,
+      body.bg-sakura .msg-bubble.ai .msg-content,
+      body.bg-sakura .ai-history-head,
+      body.bg-sakura .ai-header,
+      body.bg-sakura .settings-header,
+      body.bg-sakura #mergedHandle {
+        border-color: rgba(200, 80, 120, 0.4) !important;
+      }
+
+      /* NIGHT SAKURA MODE — dark bg, white outlines, white text */
+      body.bg-sakura-dark {
+        background: linear-gradient(180deg, #06040a 0%, #0b0710 50%, #090510 100%) !important;
+      }
+      body.bg-sakura-dark * {
+        border-color: rgba(220, 220, 255, 0.2) !important;
+      }
+      body.bg-sakura-dark .card,
+      body.bg-sakura-dark .ai-panel,
+      body.bg-sakura-dark .settings-panel,
+      body.bg-sakura-dark #mergedPanel,
+      body.bg-sakura-dark .widget,
+      body.bg-sakura-dark .ai-history-sidebar,
+      body.bg-sakura-dark .sub-modal,
+      body.bg-sakura-dark .tmodal-box,
+      body.bg-sakura-dark #linksModal .sub-modal {
+        border: 2px solid rgba(220, 220, 255, 0.35) !important;
+        box-shadow: 0 8px 40px rgba(100,80,180,0.25), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+        background: rgba(10, 8, 20, 0.78) !important;
+      }
+      body.bg-sakura-dark .widget { background: rgba(12, 9, 22, 0.72) !important; }
+      body.bg-sakura-dark,
+      body.bg-sakura-dark * { color: #f0efff !important; }
+      body.bg-sakura-dark input,
+      body.bg-sakura-dark #aiInput,
+      body.bg-sakura-dark #search {
+        border: 1.5px solid rgba(200,200,255,0.3) !important;
+        background: rgba(20,15,35,0.6) !important;
+        color: #f0efff !important;
+      }
+      body.bg-sakura-dark .actions button,
+      body.bg-sakura-dark .panel-close,
+      body.bg-sakura-dark .new-chat-btn,
+      body.bg-sakura-dark .bg-options button,
+      body.bg-sakura-dark .sub-plan,
+      body.bg-sakura-dark .msg-bubble.user .msg-content,
+      body.bg-sakura-dark .msg-bubble.ai .msg-content,
+      body.bg-sakura-dark .ai-history-head,
+      body.bg-sakura-dark .ai-header,
+      body.bg-sakura-dark .settings-header,
+      body.bg-sakura-dark #mergedHandle {
+        border-color: rgba(200, 200, 255, 0.25) !important;
       }
 
       /* CARD HEADER */
@@ -392,6 +586,55 @@
       }
       .focus-mode #exitFocusBtn { display: block; }
 
+      /* ===== SAKURA INTRO ANIMATIONS ===== */
+      @keyframes sakuraBurnIn {
+        0% {
+          opacity: 0;
+          filter: brightness(6) sepia(1) hue-rotate(-40deg) saturate(12) blur(6px);
+          box-shadow: 0 0 100px 40px rgba(255,70,0,0.8), 0 0 200px 80px rgba(255,30,0,0.45), inset 0 0 60px rgba(255,110,0,0.65);
+        }
+        15% {
+          opacity: 0.55;
+          filter: brightness(4) sepia(1) hue-rotate(-30deg) saturate(9) blur(3px);
+          box-shadow: 0 0 70px 28px rgba(255,100,10,0.65), 0 0 130px 55px rgba(255,50,0,0.35);
+        }
+        35% {
+          opacity: 0.78;
+          filter: brightness(2.5) sepia(0.8) hue-rotate(-18deg) saturate(6) blur(1px);
+          box-shadow: 0 0 45px 16px rgba(255,140,20,0.45), 0 0 80px 35px rgba(255,70,0,0.22);
+        }
+        58% {
+          opacity: 0.91;
+          filter: brightness(1.6) sepia(0.3) saturate(2.2) hue-rotate(-5deg);
+          box-shadow: 0 0 22px 7px rgba(255,180,70,0.2);
+        }
+        80% {
+          opacity: 0.97;
+          filter: brightness(1.1) sepia(0.06);
+          box-shadow: 0 0 8px 2px rgba(255,210,140,0.08);
+        }
+        100% {
+          opacity: 1;
+          filter: none;
+          box-shadow: none;
+        }
+      }
+
+      @keyframes sakuraTreeGrow {
+        0%   { clip-path: inset(100% 0 0 0); opacity: 0; }
+        8%   { opacity: 1; }
+        100% { clip-path: inset(0% 0 0 0); opacity: 1; }
+      }
+
+      @keyframes sakuraPetalBurst {
+        0%   { opacity: 0; transform: scale(0); }
+        40%  { opacity: 1; transform: scale(1.08); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+
+      .sakura-burn-in {
+        animation: sakuraBurnIn 2.8s cubic-bezier(0.22, 0.61, 0.36, 1) forwards !important;
+      }
       /* ===== JARVIS ===== */
       .ai-panel {
         position: fixed;
@@ -823,116 +1066,6 @@
         cursor: crosshair;
         position: relative;
       }
-      /* ===== LAYOUT EDITOR ===== */
-      .layout-editor {
-        position: fixed;
-        inset: 0;
-        background: rgba(2, 8, 6, 0.8);
-        backdrop-filter: blur(4px);
-        z-index: 500;
-        display: none;
-      }
-      .layout-canvas {
-        position: absolute;
-        inset: 0;
-        background-image: radial-gradient(
-          circle,
-          rgba(74, 222, 128, 0.12) 1px,
-          transparent 1px
-        );
-        background-size: 28px 28px;
-      }
-      .layout-hint {
-        position: absolute;
-        top: 24px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(10, 20, 15, 0.95);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 8px 18px;
-        font-size: 13px;
-        color: var(--muted);
-        white-space: nowrap;
-        pointer-events: none;
-      }
-      .layout-toolbar {
-        position: absolute;
-        bottom: 28px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: rgba(10, 20, 15, 0.95);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 10px 16px;
-      }
-      .layout-save {
-        padding: 8px 20px;
-        border-radius: 10px;
-        border: none;
-        background: var(--accent);
-        color: #020806;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 13px;
-      }
-      .layout-cancel {
-        padding: 8px 16px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        background: transparent;
-        color: var(--muted);
-        cursor: pointer;
-        font-size: 13px;
-      }
-      .lp-preview {
-        position: absolute;
-        width: 180px;
-        background: rgba(10, 20, 15, 0.9);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-        cursor: grab;
-        user-select: none;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
-        resize: both;
-        min-width: 140px;
-        min-height: 70px;
-      }
-      .lp-preview.dragging {
-        cursor: grabbing;
-      }
-      .lp-head {
-        padding: 8px 12px;
-        font-weight: 600;
-        font-size: 13px;
-        border-bottom: 1px solid var(--border);
-        background: var(--glass);
-      }
-      .lp-body {
-        padding: 12px;
-        font-size: 12px;
-        color: var(--muted);
-        height: 56px;
-      }
-      .layout-open-btn {
-        width: 100%;
-        padding: 9px 12px;
-        border-radius: 10px;
-        border: 1px solid var(--border);
-        background: var(--glass);
-        color: var(--text);
-        cursor: pointer;
-        font-size: 13px;
-        text-align: left;
-        margin-top: 0;
-      }
-      .layout-open-btn:hover {
-        background: rgba(74, 222, 128, 0.14);
-      }
 
       /* Name input inside settings */
       .settings-body input[type="text"] {
@@ -1089,6 +1222,25 @@
   </head>
 
   <body>
+    <!-- AUTH MODAL -->
+    <div class="auth-overlay" id="authModal">
+      <div class="auth-box">
+        <button onclick="closeAuthModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
+        <h2 id="authTitle">Sign in to Bloscom</h2>
+        <button class="auth-google-btn" onclick="bloscomGoogleSignIn()">
+          <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Continue with Google
+        </button>
+        <div class="auth-divider">— or —</div>
+        <input type="email" id="authEmail" placeholder="Email"/>
+        <input type="password" id="authPassword" placeholder="Password"/>
+        <div id="authError"></div>
+        <button class="auth-btn" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign In</button>
+        <button class="auth-btn secondary" onclick="closeAuthModal()">Cancel</button>
+        <div class="auth-switch" id="authSwitch">Don't have an account? <span onclick="toggleAuthMode()">Sign up</span></div>
+      </div>
+    </div>
+
     <button id="exitFocusBtn" onclick="toggleFocus()">✕ Exit Focus</button>
     <div class="cursor-dot"></div>
     <div class="cursor-ring"></div>
@@ -1111,10 +1263,16 @@
         <div id="quickLinks" style="display:contents;"></div>
         <button onclick="toggleLinksEditor()" title="Edit shortcuts">＋ Link</button>
         <button onclick="addTask()">+ Task</button>
+        <button onclick="resetLayoutToDefault()">Reset Layout</button>
         <button onclick="toggleFocus()">Focus</button>
         <button id="aiToggleBtn" onclick="toggleAI()">BLOSCOM-AI</button>
         <button onclick="toggleSettings()">Settings</button>
         <button onclick="toggleSub()" style="border-color:var(--accent);color:var(--accent);">✦ Upgrade</button>
+        <div id="userBadge" onclick="bloscomSignOut()">
+          <span id="userBadgeName"></span>
+          <span id="planBadge"></span>
+        </div>
+        <button id="signInBtn" onclick="openAuthModal()" style="border-color:var(--accent);color:var(--accent);">Sign In</button>
       </div>
 
       <div class="grid" id="widgetGrid">
@@ -1252,11 +1410,9 @@
             Galaxy
           </button>
           <button data-bg="none" onclick="applyBackground('none')">None</button>
+          <button data-bg="sakura" onclick="applyBackground('sakura')" style="border-color:rgba(255,150,180,0.4);color:#ffb0cc;">🌸 Sakura</button>
+          <button data-bg="sakura-dark" onclick="applyBackground('sakura-dark')" style="border-color:rgba(200,200,255,0.35);color:#c8c8ff;">🌑 Night Sakura</button>
         </div>
-        <div class="settings-label" style="margin-top: 6px">Layout</div>
-        <button class="layout-open-btn" onclick="openLayoutEditor()">
-          Customize Layout →
-        </button>
         <div class="settings-label" style="margin-top: 6px">Your Name</div>
         <input type="text" id="nameInput" placeholder="Enter your name..." />
         <div class="settings-label" style="margin-top: 6px">
@@ -1310,35 +1466,6 @@
       </div>
     </div>
 
-    <!-- LAYOUT EDITOR -->
-    <div class="layout-editor" id="layoutEditor">
-      <div class="layout-canvas" id="layoutCanvas">
-        <div class="layout-hint">
-          Drag panels to position them, then hit Save
-        </div>
-        <div class="lp-preview" id="lp-main">
-          <div class="lp-head">Main Panel</div>
-          <div class="lp-body">Search, tasks &amp; shortcuts</div>
-        </div>
-        <div class="lp-preview" id="lp-jarvis">
-          <div class="lp-head">BLOSCOM-AI</div>
-          <div class="lp-body">AI chat panel</div>
-        </div>
-        <div class="lp-preview" id="lp-settings">
-          <div class="lp-head">Settings</div>
-          <div class="lp-body">Theme &amp; layout</div>
-        </div>
-        <div class="layout-toolbar">
-          <button class="layout-save" onclick="saveLayout()">
-            Save Layout
-          </button>
-          <button class="layout-cancel" onclick="resetLayout()">Reset</button>
-          <button class="layout-cancel" onclick="closeLayoutEditor()">
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- JARVIS PANEL -->
     <div class="ai-panel" id="aiPanel">
@@ -1583,6 +1710,202 @@
         } else if (type === "grid") {
           document.body.classList.add("bg-grid");
         }
+        document.body.classList.toggle("bg-sakura",      type === "sakura");
+        document.body.classList.toggle("bg-sakura-dark", type === "sakura-dark");
+        if (type === "sakura" || type === "sakura-dark") {
+          const darkMode = type === "sakura-dark";
+          document.body.style.background = darkMode
+            ? "linear-gradient(180deg,#06040a 0%,#0b0710 50%,#090510 100%)"
+            : "linear-gradient(180deg,#d9a8be 0%,#cc94ae 50%,#be809e 100%)";
+          const canvas = document.createElement("canvas");
+          canvas.id = "sakuraCanvas";
+          canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;";
+          container.appendChild(canvas);
+
+          let W = canvas.width = window.innerWidth;
+          let H = canvas.height = window.innerHeight;
+          const ctx = canvas.getContext("2d");
+
+          // Draw tree once on offscreen canvas
+          const treeCanvas = document.createElement("canvas");
+          treeCanvas.width = W; treeCanvas.height = H;
+          const tctx = treeCanvas.getContext("2d");
+
+          // Anime-style cherry blossom tree with thick curved trunk
+          function drawAnimeTree(baseX, leanDir, scale) {
+            const trunkH = H * 0.40 * scale;
+            // Cubic bezier control points for S-curved trunk
+            const cp1x = baseX + leanDir * 40 * scale;
+            const cp1y = H - trunkH * 0.35;
+            const cp2x = baseX + leanDir * 90 * scale;
+            const cp2y = H - trunkH * 0.65;
+            const topX  = baseX + leanDir * 70 * scale;
+            const topY  = H - trunkH;
+
+            // Fill thick tapered trunk: sample points along bezier, draw filled circles
+            const steps = 80;
+            for (let i = 0; i <= steps; i++) {
+              const t = i / steps;
+              const mt = 1 - t;
+              const px = mt*mt*mt*baseX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*topX;
+              const py = mt*mt*mt*H      + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*topY;
+              const r  = Math.max(2, (22 - t * 18) * scale);
+              // Inner dark core
+              tctx.beginPath();
+              tctx.arc(px, py, r, 0, Math.PI*2);
+              tctx.fillStyle = darkMode ? `rgba(18,12,30,0.98)` : `rgba(55,28,14,0.95)`;
+              tctx.fill();
+              // Lighter edge for volume
+              tctx.beginPath();
+              tctx.arc(px + r*0.3, py - r*0.2, r * 0.55, 0, Math.PI*2);
+              tctx.fillStyle = darkMode ? `rgba(80,60,120,0.25)` : `rgba(110,60,30,0.35)`;
+              tctx.fill();
+            }
+
+            // Draw anime-style branches with bezier curves + blossom clusters
+            function branch(x, y, angle, len, depth) {
+              if (depth > 5 || len < 6) return;
+              const lw = Math.max(1.5, (5 - depth + 1) * 2.8 * scale);
+              const ex = x + Math.cos(angle) * len;
+              const ey = y + Math.sin(angle) * len;
+              // Slight curve on each branch
+              const cpx = x + Math.cos(angle + leanDir * 0.25) * len * 0.5;
+              const cpy = y + Math.sin(angle + leanDir * 0.25) * len * 0.5;
+              tctx.beginPath();
+              tctx.moveTo(x, y);
+              tctx.quadraticCurveTo(cpx, cpy, ex, ey);
+              tctx.strokeStyle = darkMode
+                ? (depth < 2 ? `rgba(22,14,38,0.95)` : `rgba(40,25,65,0.88)`)
+                : (depth < 2 ? `rgba(65,32,16,0.92)` : `rgba(100,55,28,0.85)`);
+              tctx.lineWidth = lw;
+              tctx.lineCap = "round";
+              tctx.stroke();
+
+              if (depth >= 4) {
+                // Dense blossom clusters at tips
+                for (let b = 0; b < 10; b++) {
+                  const bx = ex + (Math.random()-0.5) * 30 * scale;
+                  const by = ey + (Math.random()-0.5) * 30 * scale;
+                  const br = (5 + Math.random()*8) * scale;
+                  tctx.beginPath();
+                  tctx.arc(bx, by, br, 0, Math.PI*2);
+                  let pr, pg, pb;
+                  if (darkMode) {
+                    pr = 210 + Math.floor(Math.random()*45);
+                    pg = 210 + Math.floor(Math.random()*45);
+                    pb = 230 + Math.floor(Math.random()*25);
+                  } else {
+                    pr = 220 + Math.floor(Math.random()*35);
+                    pg = 120 + Math.floor(Math.random()*60);
+                    pb = 155 + Math.floor(Math.random()*45);
+                  }
+                  tctx.fillStyle = `rgba(${pr},${pg},${pb},${0.55+Math.random()*0.4})`;
+                  tctx.fill();
+                }
+              }
+
+              if (depth < 5) {
+                branch(ex, ey, angle - 0.42 - Math.random()*0.18, len * 0.70, depth+1);
+                branch(ex, ey, angle + 0.38 + Math.random()*0.18, len * 0.68, depth+1);
+                if (depth < 3) branch(ex, ey, angle + leanDir*(0.1+Math.random()*0.2), len * 0.58, depth+2);
+              }
+            }
+
+            const blen = H * 0.15 * scale;
+            const baseAngle = -Math.PI/2 + leanDir * 0.28;
+            branch(topX, topY, baseAngle - 0.55, blen, 0);
+            branch(topX, topY, baseAngle - 0.10, blen * 0.90, 0);
+            branch(topX, topY, baseAngle + 0.45, blen * 0.85, 0);
+            // Extra side branch mid-trunk for anime look
+            const midT = 0.55;
+            const midX = Math.pow(1-midT,3)*baseX + 3*Math.pow(1-midT,2)*midT*cp1x + 3*(1-midT)*midT*midT*cp2x + midT*midT*midT*topX;
+            const midY = Math.pow(1-midT,3)*H      + 3*Math.pow(1-midT,2)*midT*cp1y + 3*(1-midT)*midT*midT*cp2y + midT*midT*midT*topY;
+            branch(midX, midY, baseAngle - leanDir*0.9, blen * 0.65, 1);
+          }
+
+          function drawAllTrees() {
+            tctx.clearRect(0, 0, W, H);
+            drawAnimeTree(W * 0.22, 1, 1.3);   // one big tree, leans right
+
+            // Ground petals (static)
+            for (let i = 0; i < 120; i++) {
+              const gx = Math.random() * W;
+              const gy = H - Math.random() * 28;
+              const gs = 3 + Math.random() * 5;
+              tctx.beginPath();
+              tctx.ellipse(gx, gy, gs, gs*0.55, Math.random()*Math.PI, 0, Math.PI*2);
+              tctx.fillStyle = darkMode
+                ? `rgba(${205+Math.random()*50},${205+Math.random()*50},${225+Math.random()*30},${0.3+Math.random()*0.35})`
+                : `rgba(${230+Math.random()*25},${140+Math.random()*60},${170+Math.random()*40},${0.4+Math.random()*0.4})`;
+              tctx.fill();
+            }
+          }
+          drawAllTrees();
+
+          // Falling petals
+          const petals = Array.from({length: 80}, () => ({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            vx: -0.4 - Math.random() * 0.8,
+            vy: 0.6 + Math.random() * 1.2,
+            size: 4 + Math.random() * 6,
+            angle: Math.random() * Math.PI * 2,
+            spin: (Math.random() - 0.5) * 0.06,
+            swing: Math.random() * Math.PI * 2,
+            swingSpeed: 0.015 + Math.random() * 0.02,
+            opacity: 0.5 + Math.random() * 0.5,
+            r: darkMode ? 200 + Math.floor(Math.random()*55) : 215 + Math.floor(Math.random()*40),
+            g: darkMode ? 200 + Math.floor(Math.random()*55) : 130 + Math.floor(Math.random()*70),
+            b: darkMode ? 220 + Math.floor(Math.random()*35) : 160 + Math.floor(Math.random()*50),
+          }));
+
+          function drawPetal(ctx, x, y, size, angle, op, r, g, b) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, size, size*0.55, 0, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(${r},${g},${b},${op})`;
+            ctx.fill();
+            ctx.restore();
+          }
+
+          let sakuraFrame;
+          function drawSakura() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.drawImage(treeCanvas, 0, 0);
+
+            petals.forEach(p => {
+              p.swing += p.swingSpeed;
+              p.x += p.vx + Math.sin(p.swing) * 0.6;
+              p.y += p.vy;
+              p.angle += p.spin;
+
+              if (p.y > H + 20) { p.y = -10; p.x = Math.random() * W; }
+              if (p.x < -20) p.x = W + 10;
+
+              drawPetal(ctx, p.x, p.y, p.size, p.angle, p.opacity, p.r, p.g, p.b);
+            });
+
+            sakuraFrame = requestAnimationFrame(drawSakura);
+          }
+          drawSakura();
+
+          // ── Sakura intro: tree rises, panels slide in, then burn ──
+          container._sakuraCanvas = canvas;  // expose for bg-switch code
+
+          window.addEventListener("resize", () => {
+            W = canvas.width = treeCanvas.width = window.innerWidth;
+            H = canvas.height = treeCanvas.height = window.innerHeight;
+            drawAllTrees();
+          });
+
+          container._stopSakura = () => cancelAnimationFrame(sakuraFrame);
+        } else {
+          document.body.style.background = "";
+          if (container._stopSakura) { container._stopSakura(); container._stopSakura = null; }
+        }
+
         // "none" leaves container empty
 
         if (type === "galaxy") {
@@ -1667,9 +1990,128 @@
           .querySelectorAll(".bg-options button[data-bg]")
           .forEach((b) => b.classList.toggle("active", b.dataset.bg === type));
         localStorage.setItem("bgType", type);
+
+        // Update cursor color for sakura modes
+        const _dot  = document.querySelector(".cursor-dot");
+        const _ring = document.querySelector(".cursor-ring");
+        if (_dot && _ring) {
+          if (type === "sakura" || type === "sakura-dark") {
+            _dot.style.background   = "#ffffff";
+            _ring.style.borderColor = "rgba(255,255,255,0.7)";
+          } else {
+            const _hex = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#4ade80";
+            const _c   = hexToRgb(_hex);
+            _dot.style.background   = _hex;
+            _ring.style.borderColor = `rgba(${_c.r},${_c.g},${_c.b},0.6)`;
+          }
+        }
+
+        // Switch to per-background layout
+        window._currentBg = type;
+
+        if ((type === "sakura" || type === "sakura-dark") && window._pageLoaded) {
+          // ── Animated sakura transition ───────────────────────────
+          const sakCanvas = document.querySelector(".leaves canvas");
+          const def = getDefaultLayout();
+          const bgLayout = JSON.parse(localStorage.getItem(getPanelLayoutKey()) || "{}");
+          const targetLayout = bgLayout.main ? bgLayout : def;
+
+          const SLIDE = 900; // panel slide duration ms
+          const EASE  = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+          // Collect panels that need to move
+          const card    = document.querySelector(".card");
+          const aiPanel = document.getElementById("aiPanel");
+          const sPanel  = document.getElementById("settingsPanel");
+          const mp      = document.getElementById("mergedPanel");
+
+          // Make hidden panels visible at their current spot before moving
+          [aiPanel, sPanel].forEach(el => {
+            if (!el) return;
+            if (el.style.display !== "flex") {
+              el.style.transition = "none";
+              el.style.visibility = "hidden";
+              el.style.display    = "flex";
+              el.style.right      = "auto";
+              el.style.bottom     = "auto";
+            }
+          });
+
+          // One frame to commit layout, then slide everything
+          requestAnimationFrame(() => {
+            const moveFn = `left ${SLIDE}ms ${EASE}, top ${SLIDE}ms ${EASE}, width ${SLIDE}ms ${EASE}`;
+
+            if (card) {
+              card.style.transition = moveFn;
+              card.style.left  = targetLayout.main.left  + "px";
+              card.style.top   = targetLayout.main.top   + "px";
+              card.style.width = targetLayout.main.width + "px";
+              card.style.maxWidth = "none";
+            }
+            [{ el: aiPanel, pos: targetLayout.jarvis },
+             { el: sPanel,  pos: targetLayout.settings }].forEach(({ el, pos }) => {
+              if (!el || !pos) return;
+              el.style.visibility = "";
+              el.style.transition = moveFn;
+              el.style.left   = pos.left   + "px";
+              el.style.top    = pos.top    + "px";
+              el.style.width  = pos.width  + "px";
+              el.style.height = pos.height + "px";
+            });
+
+            // Tree canvas rises up from bottom simultaneously
+            if (sakCanvas) {
+              sakCanvas.style.transition = "none";
+              sakCanvas.style.clipPath   = "inset(100% 0 0 0)";
+              sakCanvas.style.opacity    = "0";
+              requestAnimationFrame(() => {
+                sakCanvas.style.transition = `clip-path 2.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease`;
+                sakCanvas.style.clipPath   = "inset(0% 0 0 0)";
+                sakCanvas.style.opacity    = "1";
+              });
+            }
+
+            // After panels land → burn-in effect
+            const burnTargets = [
+              { el: card,    delay: SLIDE + 100  },
+              { el: aiPanel, delay: SLIDE + 400  },
+              { el: sPanel,  delay: SLIDE + 700  },
+              { el: mp,      delay: SLIDE + 400  },
+            ];
+            burnTargets.forEach(({ el, delay }) => {
+              if (!el || el.style.display === "none") return;
+              setTimeout(() => {
+                if (card)    card.style.transition    = "";
+                if (aiPanel) aiPanel.style.transition = "";
+                if (sPanel)  sPanel.style.transition  = "";
+                el.classList.remove("sakura-burn-in");
+                void el.offsetWidth;
+                el.classList.add("sakura-burn-in");
+                el.addEventListener("animationend", () => el.classList.remove("sakura-burn-in"), { once: true });
+              }, delay);
+            });
+          });
+
+        } else {
+          // ── Non-animated snap (first load or non-sakura bg) ──────
+          const bgLayout = JSON.parse(localStorage.getItem(getPanelLayoutKey()) || "{}");
+          const def = getDefaultLayout();
+          const layout = bgLayout.main ? bgLayout : def;
+          const card    = document.querySelector(".card");
+          const aiPanel = document.getElementById("aiPanel");
+          const sPanel  = document.getElementById("settingsPanel");
+          if (card) {
+            card.style.left  = layout.main.left  + "px";
+            card.style.top   = layout.main.top   + "px";
+            card.style.width = layout.main.width + "px";
+            card.style.maxWidth = "none";
+          }
+          if (aiPanel?.style.display === "flex") openPanelAt(aiPanel, layout.jarvis);
+          if (sPanel?.style.display  === "flex") openPanelAt(sPanel,  layout.settings);
+        }
       }
 
-      const savedBg = localStorage.getItem("bgType") || "petals";
+      const savedBg = localStorage.getItem("bgType") || "sakura";
       applyBackground(savedBg);
 
       // BG more toggle
@@ -1687,13 +2129,17 @@
               parseInt(panel.style.height) || panel.offsetHeight,
               panel.scrollHeight + 10,
             ) + "px"
-          : (JSON.parse(localStorage.getItem("panelLayout") || "{}").settings
+          : (JSON.parse(localStorage.getItem(getPanelLayoutKey()) || "{}").settings
               ?.height ?? 400) + "px";
       }
 
       // CURSOR
       const dot = document.querySelector(".cursor-dot");
       const ring = document.querySelector(".cursor-ring");
+      if (window._currentBg === "sakura" || window._currentBg === "sakura-dark") {
+        dot.style.background   = "#ffffff";
+        ring.style.borderColor = "rgba(255,255,255,0.7)";
+      }
       let mouseX = 0,
         mouseY = 0,
         ringX = 0,
@@ -1715,6 +2161,38 @@
       }
       animate();
 
+      // ── Auto-save layout whenever panels are moved or resized ──
+      function autoSaveLayout() {
+        const card   = document.querySelector(".card");
+        const ai     = document.getElementById("aiPanel");
+        const sPanel = document.getElementById("settingsPanel");
+        const mp     = document.getElementById("mergedPanel");
+
+        function rectOf(el) {
+          if (!el || el.style.display === 'none') return null;
+          const r = el.getBoundingClientRect();
+          return { left: Math.round(r.left), top: Math.round(r.top), width: Math.round(r.width), height: Math.round(r.height) };
+        }
+
+        const layout = {
+          main:     rectOf(card),
+          jarvis:   rectOf(ai),
+          settings: rectOf(sPanel),
+        };
+        if (layout.main) localStorage.setItem(getPanelLayoutKey(), JSON.stringify(layout));
+      }
+
+      // Save on resize (uses ResizeObserver, debounced)
+      let _resizeTimer;
+      const _resizeObs = new ResizeObserver(() => {
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(autoSaveLayout, 300);
+      });
+      ['card', 'aiPanel', 'settingsPanel', 'mergedPanel'].forEach(id => {
+        const el = id === 'card' ? document.querySelector('.card') : document.getElementById(id);
+        if (el) _resizeObs.observe(el);
+      });
+
       // DRAG
       const card = document.querySelector(".card");
       let isDragging = false,
@@ -1733,7 +2211,10 @@
         card.style.top = e.clientY - offsetY + "px";
       });
 
-      document.addEventListener("mouseup", () => (isDragging = false));
+      document.addEventListener("mouseup", () => {
+        if (isDragging) autoSaveLayout();
+        isDragging = false;
+      });
 
       // FOCUS
       function toggleFocus() {
@@ -1747,7 +2228,7 @@
           panel.style.display = "none";
         } else {
           const layout = JSON.parse(
-            localStorage.getItem("panelLayout") || "{}",
+            localStorage.getItem(getPanelLayoutKey()) || "{}",
           );
           openPanelAt(panel, layout.jarvis || getDefaultLayout().jarvis);
         }
@@ -1895,9 +2376,13 @@
         chatHistory.push({ role: "user", content: msg });
 
         try {
+          const idToken = window._firebaseUser ? await window._firebaseUser.getIdToken() : null;
           const res = await fetch("http://localhost:3000/api/jarvis", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(idToken ? { "Authorization": `Bearer ${idToken}` } : {}),
+            },
             body: JSON.stringify({
               message: msg,
               history: chatHistory.slice(0, -1),
@@ -2009,6 +2494,7 @@
         if (aiDragging) {
           showMergeHint('ai', false);
           checkMergeOnDrop('ai');
+          autoSaveLayout();
         }
         aiDragging = false;
         aiPanel.style.transition = "";
@@ -2258,7 +2744,7 @@
           if (!on) return;
           mp.style.left=(e.clientX-dx)+'px'; mp.style.top=(e.clientY-dy)+'px'; mp.style.right='auto';
         });
-        document.addEventListener('mouseup', () => { if(on) { on=false; saveMergeState(); } });
+        document.addEventListener('mouseup', () => { if(on) { on=false; saveMergeState(); autoSaveLayout(); } });
       })();
 
       // ===== PANEL MERGE =====
@@ -2332,6 +2818,46 @@
         delete wA.dataset.mergedWith;
       }
 
+      // ===== AUTH =====
+      let authMode = "signin";
+      function openAuthModal() {
+        document.getElementById("authModal").classList.add("open");
+        document.getElementById("authError").textContent = "";
+      }
+      function closeAuthModal() { document.getElementById("authModal").classList.remove("open"); }
+      function toggleAuthMode() {
+        authMode = authMode === "signin" ? "signup" : "signin";
+        document.getElementById("authTitle").textContent = authMode === "signin" ? "Sign in to Bloscom" : "Create account";
+        document.getElementById("authSubmitBtn").textContent = authMode === "signin" ? "Sign In" : "Sign Up";
+        document.getElementById("authSwitch").innerHTML = authMode === "signin"
+          ? `Don't have an account? <span onclick="toggleAuthMode()">Sign up</span>`
+          : `Already have an account? <span onclick="toggleAuthMode()">Sign in</span>`;
+        document.getElementById("authError").textContent = "";
+      }
+      function handleAuthSubmit() {
+        const email = document.getElementById("authEmail").value.trim();
+        const pass  = document.getElementById("authPassword").value;
+        if (authMode === "signin") bloscomSignIn(email, pass);
+        else bloscomSignUp(email, pass);
+      }
+
+      // show/hide sign in button based on auth state
+      const signInBtn = document.getElementById("signInBtn");
+      const userBadgeEl = document.getElementById("userBadge");
+      const origOnAuth = window.onAuthStateChanged;
+      setInterval(() => {
+        if (window._firebaseUser) {
+          signInBtn.style.display = "none";
+          userBadgeEl.style.display = "flex";
+          document.getElementById("userBadgeName").textContent = window._firebaseUser.displayName || window._firebaseUser.email.split("@")[0];
+          document.getElementById("planBadge").textContent = (window._userPlan || "free").toUpperCase();
+          document.getElementById("planBadge").style.display = "inline";
+        } else {
+          signInBtn.style.display = "";
+          userBadgeEl.style.display = "none";
+        }
+      }, 1000);
+
       function toggleSub() {
         document.getElementById("subModal").classList.toggle("open");
       }
@@ -2343,7 +2869,7 @@
           panel.style.display = "none";
         } else {
           const layout = JSON.parse(
-            localStorage.getItem("panelLayout") || "{}",
+            localStorage.getItem(getPanelLayoutKey()) || "{}",
           );
           openPanelAt(panel, layout.settings || getDefaultLayout().settings);
         }
@@ -2381,7 +2907,7 @@
         });
 
         localStorage.setItem("accentColor", hex);
-        applyBackground(localStorage.getItem("bgType") || "petals");
+        applyBackground(localStorage.getItem("bgType") || "sakura");
       }
 
       // SETTINGS DRAG
@@ -2412,6 +2938,7 @@
         if (sDragging) {
           showMergeHint('settings', false);
           checkMergeOnDrop('settings');
+          autoSaveLayout();
         }
         sDragging = false;
       });
@@ -2505,75 +3032,61 @@
         applyAccent(savedAccent);
       }
 
-      // ===== LAYOUT EDITOR =====
-      function openLayoutEditor() {
-        document.getElementById("settingsPanel").style.display = "none";
 
-        const layout = JSON.parse(localStorage.getItem("panelLayout") || "{}");
-        const cardRect = document
-          .querySelector(".card")
-          .getBoundingClientRect();
-
-        const mEl = document.getElementById("lp-main");
-        mEl.style.left = (layout.main?.left ?? cardRect.left) + "px";
-        mEl.style.top = (layout.main?.top ?? cardRect.top) + "px";
-        mEl.style.width = (layout.main?.width ?? cardRect.width) + "px";
-        mEl.style.height = (layout.main?.height ?? cardRect.height) + "px";
-
-        const jEl = document.getElementById("lp-jarvis");
-        jEl.style.left =
-          (layout.jarvis?.left ?? window.innerWidth - 220) + "px";
-        jEl.style.top = (layout.jarvis?.top ?? window.innerHeight - 320) + "px";
-        jEl.style.width = (layout.jarvis?.width ?? 300) + "px";
-        jEl.style.height = (layout.jarvis?.height ?? 400) + "px";
-
-        const sEl = document.getElementById("lp-settings");
-        sEl.style.left =
-          (layout.settings?.left ?? window.innerWidth - 260) + "px";
-        sEl.style.top = (layout.settings?.top ?? 20) + "px";
-        sEl.style.width = (layout.settings?.width ?? 240) + "px";
-        sEl.style.height = (layout.settings?.height ?? 160) + "px";
-
-        document.getElementById("layoutEditor").style.display = "block";
+      // Per-background layout keys
+      window._currentBg = localStorage.getItem("bgType") || "sakura";
+      function getPanelLayoutKey() {
+        const bg = window._currentBg;
+        if (bg === "sakura")      return "panelLayout_sakura_v3";
+        if (bg === "sakura-dark") return "panelLayout_sakura_v3"; // share same layout
+        return "panelLayout_" + bg;
       }
 
-      function closeLayoutEditor() {
-        document.getElementById("layoutEditor").style.display = "none";
-      }
+      function isSakuraBg() { return window._currentBg === "sakura" || window._currentBg === "sakura-dark"; }
 
       function getDefaultLayout() {
-        const W = window.innerWidth,
-          H = window.innerHeight;
+        const W = window.innerWidth, H = window.innerHeight;
+        if (isSakuraBg()) {
+          // Right-side stacked layout: main panel top-right, AI + Settings below side by side
+          const gap = 12;
+          const pLeft = Math.round(W * 0.53);
+          const pWidth = Math.round(W * 0.44);
+          const mainH = Math.round(H * 0.40);
+          const botH = Math.round(H * 0.44);
+          const botTop = Math.round(H * 0.04) + mainH + 28;
+          const halfW = Math.round((pWidth - gap) / 2);
+          return {
+            main:    { left: pLeft, top: Math.round(H * 0.04), width: pWidth, height: mainH },
+            jarvis:  { left: pLeft, top: botTop, width: halfW, height: botH },
+            settings:{ left: pLeft + halfW + gap, top: botTop, width: halfW, height: botH },
+          };
+        }
         const gap = 15;
-        const aiW = 260,
-          sW = 240;
+        const aiW = 260, sW = 240;
         const cardW = Math.min(Math.round(W * 0.52), 780);
-        const cardH = 400,
-          aiH = 400,
-          sH = 400;
+        const cardH = 400, aiH = 400, sH = 400;
         const totalW = aiW + gap + cardW + gap + sW;
         const startX = Math.round((W - totalW) / 2);
         const topY = Math.round((H - cardH) / 2);
         return {
-          jarvis: { left: startX, top: topY, width: aiW, height: aiH },
-          main: {
-            left: startX + aiW + gap,
-            top: topY,
-            width: cardW,
-            height: cardH,
-          },
-          settings: {
-            left: startX + aiW + gap + cardW + gap,
-            top: topY,
-            width: sW,
-            height: sH,
-          },
+          jarvis:   { left: startX, top: topY, width: aiW, height: aiH },
+          main:     { left: startX + aiW + gap, top: topY, width: cardW, height: cardH },
+          settings: { left: startX + aiW + gap + cardW + gap, top: topY, width: sW, height: sH },
         };
+      }
+
+      function resetLayoutToDefault() {
+        localStorage.removeItem(getPanelLayoutKey());
+        unmergeAll();
+        applyDefaultLayout();
+        const def = getDefaultLayout();
+        openPanelAt(document.getElementById("aiPanel"),       def.jarvis);
+        openPanelAt(document.getElementById("settingsPanel"), def.settings);
       }
 
       function applyDefaultLayout() {
         const def = getDefaultLayout();
-        localStorage.setItem("panelLayout", JSON.stringify(def));
+        localStorage.setItem(getPanelLayoutKey(), JSON.stringify(def));
         const card = document.querySelector(".card");
         card.style.left = def.main.left + "px";
         card.style.top = def.main.top + "px";
@@ -2581,62 +3094,9 @@
         card.style.maxWidth = "none";
       }
 
-      function resetLayout() {
-        const def = getDefaultLayout();
-        const mEl = document.getElementById("lp-main");
-        mEl.style.left = def.main.left + "px";
-        mEl.style.top = def.main.top + "px";
-        mEl.style.width = def.main.width + "px";
-        mEl.style.height = def.main.height + "px";
-
-        const jEl = document.getElementById("lp-jarvis");
-        jEl.style.left = def.jarvis.left + "px";
-        jEl.style.top = def.jarvis.top + "px";
-        jEl.style.width = def.jarvis.width + "px";
-        jEl.style.height = def.jarvis.height + "px";
-
-        const sEl = document.getElementById("lp-settings");
-        sEl.style.left = def.settings.left + "px";
-        sEl.style.top = def.settings.top + "px";
-        sEl.style.width = def.settings.width + "px";
-        sEl.style.height = def.settings.height + "px";
-      }
-
-      function saveLayout() {
-        const rect = (id) =>
-          document.getElementById(id).getBoundingClientRect();
-        const mR = rect("lp-main"),
-          jR = rect("lp-jarvis"),
-          sR = rect("lp-settings");
-        localStorage.setItem(
-          "panelLayout",
-          JSON.stringify({
-            main: {
-              left: Math.round(mR.left),
-              top: Math.round(mR.top),
-              width: Math.round(mR.width),
-              height: Math.round(mR.height),
-            },
-            jarvis: {
-              left: Math.round(jR.left),
-              top: Math.round(jR.top),
-              width: Math.round(jR.width),
-              height: Math.round(jR.height),
-            },
-            settings: {
-              left: Math.round(sR.left),
-              top: Math.round(sR.top),
-              width: Math.round(sR.width),
-              height: Math.round(sR.height),
-            },
-          }),
-        );
-        applyMainLayout();
-        closeLayoutEditor();
-      }
 
       function applyMainLayout() {
-        const saved = localStorage.getItem("panelLayout");
+        const saved = localStorage.getItem(getPanelLayoutKey());
         if (!saved || !JSON.parse(saved).main) {
           applyDefaultLayout();
           return;
@@ -2657,55 +3117,88 @@
 
       // Auto-open panels at saved/default positions on load
       function openPanelAt(panel, pos) {
+        // Position while hidden so it never flashes at the CSS default location
+        panel.style.transition = "none";
+        panel.style.visibility = "hidden";
         panel.style.display = "flex";
-        panel.style.right = "auto";
+        panel.style.right  = "auto";
         panel.style.bottom = "auto";
-        panel.style.left = pos.left + "px";
-        panel.style.top = pos.top + "px";
-        panel.style.width = pos.width + "px";
+        panel.style.left   = pos.left   + "px";
+        panel.style.top    = pos.top    + "px";
+        panel.style.width  = pos.width  + "px";
         panel.style.height = pos.height + "px";
+        // Show after layout is committed, then restore transitions
+        requestAnimationFrame(() => {
+          panel.style.visibility = "";
+          panel.style.transition = "";
+        });
       }
 
       const initLayout = JSON.parse(
-        localStorage.getItem("panelLayout") || "{}",
+        localStorage.getItem(getPanelLayoutKey()) || "{}",
       );
       const defLayout = getDefaultLayout();
-      openPanelAt(
-        document.getElementById("aiPanel"),
-        initLayout.jarvis || defLayout.jarvis,
-      );
-      openPanelAt(
-        document.getElementById("settingsPanel"),
-        initLayout.settings || defLayout.settings,
-      );
 
-      // Drag inside layout canvas — skip if click is on resize handle corner
-      let lpDragging = null,
-        lpOffX = 0,
-        lpOffY = 0;
+      function openPanelsDefault() {
+        const jarvisPos   = initLayout.jarvis   || defLayout.jarvis;
+        const settingsPos = initLayout.settings || defLayout.settings;
 
-      document.querySelectorAll(".lp-preview").forEach((el) => {
-        el.addEventListener("mousedown", (e) => {
-          const r = el.getBoundingClientRect();
-          if (e.clientX > r.right - 18 && e.clientY > r.bottom - 18) return;
-          lpDragging = el;
-          lpOffX = e.clientX - el.offsetLeft;
-          lpOffY = e.clientY - el.offsetTop;
-          el.classList.add("dragging");
-          e.stopPropagation();
-        });
+        // For sakura: if using default (no saved layout), push panels below the actual card
+        if (isSakuraBg() && !initLayout.jarvis) {
+          const card = document.querySelector(".card");
+          const cardRect = card.getBoundingClientRect();
+          const gap = 16;
+          const botTop = Math.round(cardRect.bottom) + gap;
+          const halfW  = Math.round((defLayout.jarvis.width + defLayout.settings.width + 12) / 2);
+          const adjJarvis   = { ...jarvisPos,   top: botTop };
+          const adjSettings = { ...settingsPos, top: botTop };
+          openPanelAt(document.getElementById("aiPanel"),       adjJarvis);
+          openPanelAt(document.getElementById("settingsPanel"), adjSettings);
+        } else {
+          openPanelAt(document.getElementById("aiPanel"),       jarvisPos);
+          openPanelAt(document.getElementById("settingsPanel"), settingsPos);
+        }
+      }
+
+      // Defer so card has rendered and getBoundingClientRect is accurate
+      requestAnimationFrame(() => {
+        openPanelsDefault();
+
+        // First-load sakura tree + burn-in (page was already on sakura)
+        if (isSakuraBg()) {
+          const sakCanvas = document.querySelector(".leaves canvas");
+          if (sakCanvas) {
+            sakCanvas.style.transition = "none";
+            sakCanvas.style.clipPath   = "inset(100% 0 0 0)";
+            sakCanvas.style.opacity    = "0";
+            setTimeout(() => {
+              sakCanvas.style.transition = "clip-path 2.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease";
+              sakCanvas.style.clipPath   = "inset(0% 0 0 0)";
+              sakCanvas.style.opacity    = "1";
+            }, 80);
+          }
+          const burnOrder = [
+            { el: document.querySelector(".card"),              delay: 1400 },
+            { el: document.getElementById("aiPanel"),           delay: 1900 },
+            { el: document.getElementById("settingsPanel"),     delay: 2400 },
+            { el: document.getElementById("mergedPanel"),       delay: 1900 },
+          ];
+          burnOrder.forEach(({ el, delay }) => {
+            if (!el || el.style.display === "none") return;
+            setTimeout(() => {
+              el.classList.remove("sakura-burn-in");
+              void el.offsetWidth;
+              el.classList.add("sakura-burn-in");
+              el.addEventListener("animationend", () => el.classList.remove("sakura-burn-in"), { once: true });
+            }, delay);
+          });
+        }
+
+        // Mark page as fully loaded so future bg switches use animated transition
+        setTimeout(() => { window._pageLoaded = true; }, 3500);
       });
 
-      document.addEventListener("mousemove", (e) => {
-        if (!lpDragging) return;
-        lpDragging.style.left = e.clientX - lpOffX + "px";
-        lpDragging.style.top = e.clientY - lpOffY + "px";
-      });
 
-      document.addEventListener("mouseup", () => {
-        if (lpDragging) lpDragging.classList.remove("dragging");
-        lpDragging = null;
-      });
 
       // circular favicon
       (function() {
