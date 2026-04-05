@@ -6,11 +6,26 @@
     <title>Bloscom</title>
     <link rel="icon" id="favicon" type="image/png" />
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet"/>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-      import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-      import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+      import {
+        getAuth,
+        onAuthStateChanged,
+        signInWithEmailAndPassword,
+        createUserWithEmailAndPassword,
+        signOut,
+        GoogleAuthProvider,
+        signInWithPopup,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyAxhwk3cq-R86s4EqKdkaZxoT3ZX_6hHek",
@@ -21,23 +36,42 @@
         appId: "1:33982788:web:84fd47557a42d1544f2f11",
       };
 
-      const fbApp  = initializeApp(firebaseConfig);
-      const auth   = getAuth(fbApp);
-      const dbFs   = getFirestore(fbApp);
+      const fbApp = initializeApp(firebaseConfig);
+      const auth = getAuth(fbApp);
+      const dbFs = getFirestore(fbApp);
       const gProvider = new GoogleAuthProvider();
 
-      window._bloscomAuth = { auth, dbFs, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, signInWithPopup, gProvider, doc, getDoc };
+      window._bloscomAuth = {
+        auth,
+        dbFs,
+        signInWithEmailAndPassword,
+        createUserWithEmailAndPassword,
+        signOut,
+        signInWithPopup,
+        gProvider,
+        doc,
+        getDoc,
+      };
 
-      onAuthStateChanged(auth, async user => {
+      onAuthStateChanged(auth, async (user) => {
         if (user) {
           window._firebaseUser = user;
           const snap = await getDoc(doc(dbFs, "users", user.uid));
-          window._userPlan = snap.exists() ? (snap.data().plan || "free") : "free";
+          window._userPlan = snap.exists()
+            ? snap.data().plan || "free"
+            : "free";
           const badge = document.getElementById("userBadge");
-          if (badge) { badge.textContent = user.displayName || user.email.split("@")[0]; badge.style.display = "flex"; }
+          if (badge) {
+            badge.textContent = user.displayName || user.email.split("@")[0];
+            badge.style.display = "flex";
+          }
           const planBadge = document.getElementById("planBadge");
-          if (planBadge) { planBadge.textContent = window._userPlan.toUpperCase(); planBadge.style.display = "inline"; }
-          document.getElementById("authModal")?.style && (document.getElementById("authModal").style.display = "none");
+          if (planBadge) {
+            planBadge.textContent = window._userPlan.toUpperCase();
+            planBadge.style.display = "inline";
+          }
+          document.getElementById("authModal")?.style &&
+            (document.getElementById("authModal").style.display = "none");
         } else {
           window._firebaseUser = null;
           window._userPlan = "free";
@@ -48,18 +82,30 @@
 
       window.bloscomSignIn = async (email, password) => {
         const { auth, signInWithEmailAndPassword } = window._bloscomAuth;
-        try { await signInWithEmailAndPassword(auth, email, password); closeAuthModal(); }
-        catch(e) { document.getElementById("authError").textContent = e.message; }
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          closeAuthModal();
+        } catch (e) {
+          document.getElementById("authError").textContent = e.message;
+        }
       };
       window.bloscomSignUp = async (email, password) => {
         const { auth, createUserWithEmailAndPassword } = window._bloscomAuth;
-        try { await createUserWithEmailAndPassword(auth, email, password); closeAuthModal(); }
-        catch(e) { document.getElementById("authError").textContent = e.message; }
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+          closeAuthModal();
+        } catch (e) {
+          document.getElementById("authError").textContent = e.message;
+        }
       };
       window.bloscomGoogleSignIn = async () => {
         const { auth, signInWithPopup, gProvider } = window._bloscomAuth;
-        try { await signInWithPopup(auth, gProvider); closeAuthModal(); }
-        catch(e) { document.getElementById("authError").textContent = e.message; }
+        try {
+          await signInWithPopup(auth, gProvider);
+          closeAuthModal();
+        } catch (e) {
+          document.getElementById("authError").textContent = e.message;
+        }
       };
       window.bloscomSignOut = async () => {
         await window._bloscomAuth.signOut(window._bloscomAuth.auth);
@@ -130,24 +176,35 @@
         display: none;
         position: fixed;
         z-index: 200;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.09);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.09);
         border-radius: 24px;
-        box-shadow: 0 16px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+        box-shadow:
+          0 16px 60px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.08);
         backdrop-filter: blur(28px) saturate(160%);
         overflow: hidden;
         resize: both;
         flex-direction: column;
-        min-width: 300px; min-height: 200px;
+        min-width: 300px;
+        min-height: 200px;
       }
-      #mergedPanel.open { display: flex; }
+      #mergedPanel.open {
+        display: flex;
+      }
       #mergedHandle {
-        display: flex; align-items: center; justify-content: space-between;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding: 8px 16px;
-        border-bottom: 1px solid rgba(255,255,255,0.07);
-        cursor: grab; user-select: none; flex-shrink: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+        cursor: grab;
+        user-select: none;
+        flex-shrink: 0;
       }
-      #mergedHandle:active { cursor: grabbing; }
+      #mergedHandle:active {
+        cursor: grabbing;
+      }
       #mergedInner {
         display: flex;
         flex: 1;
@@ -168,67 +225,134 @@
         border-radius: 0 !important;
         box-shadow: none !important;
         border: none !important;
-        border-right: 1px solid rgba(255,255,255,0.06) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
         resize: none !important;
         backdrop-filter: none !important;
         overflow: hidden !important;
       }
-      #mergedInner > *:last-child { border-right: none !important; }
+      #mergedInner > *:last-child {
+        border-right: none !important;
+      }
       .merge-drop-target {
         outline: 2px solid var(--accent) !important;
-        box-shadow: 0 0 28px rgba(249,168,212,0.18) !important;
+        box-shadow: 0 0 28px rgba(249, 168, 212, 0.18) !important;
       }
 
       /* AUTH MODAL */
       .auth-overlay {
-        position: fixed; inset: 0; z-index: 600;
-        background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
-        display: none; align-items: center; justify-content: center;
+        position: fixed;
+        inset: 0;
+        z-index: 600;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        display: none;
+        align-items: center;
+        justify-content: center;
       }
-      .auth-overlay.open { display: flex; }
+      .auth-overlay.open {
+        display: flex;
+      }
       .auth-box {
-        background: rgba(10,20,15,0.97);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 20px; padding: 36px 32px; width: 360px;
-        box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-        display: flex; flex-direction: column; gap: 14px;
+        background: rgba(10, 20, 15, 0.97);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 36px 32px;
+        width: 360px;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
       }
-      .auth-box h2 { margin: 0; font-size: 20px; font-weight: 800; text-align: center; }
+      .auth-box h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+        text-align: center;
+      }
       .auth-box input {
-        width: 100%; padding: 11px 14px; border-radius: 10px;
-        border: 1px solid var(--border); background: rgba(255,255,255,0.05);
-        color: var(--text); font-size: 13px; margin: 0;
+        width: 100%;
+        padding: 11px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        font-size: 13px;
+        margin: 0;
         box-sizing: border-box;
       }
       .auth-btn {
-        width: 100%; padding: 11px; border-radius: 10px;
-        font-size: 13px; font-weight: 700; cursor: pointer; border: none;
-        background: var(--accent); color: #000;
+        width: 100%;
+        padding: 11px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        background: var(--accent);
+        color: #000;
       }
       .auth-btn.secondary {
-        background: rgba(255,255,255,0.06);
-        border: 1px solid var(--border); color: var(--text);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--border);
+        color: var(--text);
       }
       .auth-google-btn {
-        width: 100%; padding: 11px; border-radius: 10px;
-        font-size: 13px; font-weight: 600; cursor: pointer;
-        border: 1px solid var(--border); background: rgba(255,255,255,0.05);
-        color: var(--text); display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%;
+        padding: 11px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
       }
-      .auth-divider { text-align: center; font-size: 11px; color: var(--muted); }
-      .auth-switch { text-align: center; font-size: 12px; color: var(--muted); cursor: pointer; }
-      .auth-switch span { color: var(--accent); text-decoration: underline; }
-      #authError { color: #f87171; font-size: 12px; text-align: center; min-height: 16px; }
+      .auth-divider {
+        text-align: center;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .auth-switch {
+        text-align: center;
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+      .auth-switch span {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+      #authError {
+        color: #f87171;
+        font-size: 12px;
+        text-align: center;
+        min-height: 16px;
+      }
       #userBadge {
-        display: none; align-items: center; gap: 6px;
-        padding: 6px 12px; border-radius: 10px;
-        border: 1px solid var(--border); background: rgba(255,255,255,0.05);
-        font-size: 12px; font-weight: 600; cursor: pointer;
+        display: none;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
       }
       #planBadge {
-        display: none; font-size: 9px; font-weight: 800;
-        background: var(--accent); color: #000;
-        padding: 1px 6px; border-radius: 6px; letter-spacing: 0.05em;
+        display: none;
+        font-size: 9px;
+        font-weight: 800;
+        background: var(--accent);
+        color: #000;
+        padding: 1px 6px;
+        border-radius: 6px;
+        letter-spacing: 0.05em;
       }
 
       /* SAKURA MODE — pink borders on everything */
@@ -245,10 +369,15 @@
       body.bg-sakura .tmodal-box,
       body.bg-sakura #linksModal .sub-modal {
         border: 2px solid rgba(255, 120, 170, 0.95) !important;
-        box-shadow: 0 8px 40px rgba(160,60,90,0.3), inset 0 1px 0 rgba(255,255,255,0.5), 0 0 12px rgba(255,120,170,0.4) !important;
-        background: rgba(200,150,175,0.72) !important;
+        box-shadow:
+          0 8px 40px rgba(160, 60, 90, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5),
+          0 0 12px rgba(255, 120, 170, 0.4) !important;
+        background: rgba(200, 150, 175, 0.72) !important;
       }
-      body.bg-sakura .widget { background: rgba(195,145,168,0.68) !important; }
+      body.bg-sakura .widget {
+        background: rgba(195, 145, 168, 0.68) !important;
+      }
       body.bg-sakura,
       body.bg-sakura * {
         color: #1a0a10 !important;
@@ -257,14 +386,13 @@
       body.bg-sakura #aiInput,
       body.bg-sakura #search {
         border: 1.5px solid rgba(200, 80, 120, 0.5) !important;
-        background: rgba(255,225,238,0.5) !important;
+        background: rgba(255, 225, 238, 0.5) !important;
       }
       body.bg-sakura .actions button,
       body.bg-sakura .panel-close,
       body.bg-sakura .new-chat-btn,
       body.bg-sakura .bg-options button,
       body.bg-sakura .sub-plan,
-
       body.bg-sakura .msg-bubble.user .msg-content,
       body.bg-sakura .msg-bubble.ai .msg-content,
       body.bg-sakura .ai-history-head,
@@ -276,7 +404,12 @@
 
       /* NIGHT SAKURA MODE — dark bg, white outlines, white text */
       body.bg-sakura-dark {
-        background: linear-gradient(180deg, #06040a 0%, #0b0710 50%, #090510 100%) !important;
+        background: linear-gradient(
+          180deg,
+          #06040a 0%,
+          #0b0710 50%,
+          #090510 100%
+        ) !important;
       }
       body.bg-sakura-dark * {
         border-color: rgba(220, 220, 255, 0.2) !important;
@@ -291,17 +424,23 @@
       body.bg-sakura-dark .tmodal-box,
       body.bg-sakura-dark #linksModal .sub-modal {
         border: 2px solid rgba(220, 220, 255, 0.35) !important;
-        box-shadow: 0 8px 40px rgba(100,80,180,0.25), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+        box-shadow:
+          0 8px 40px rgba(100, 80, 180, 0.25),
+          inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
         background: rgba(10, 8, 20, 0.78) !important;
       }
-      body.bg-sakura-dark .widget { background: rgba(12, 9, 22, 0.72) !important; }
+      body.bg-sakura-dark .widget {
+        background: rgba(12, 9, 22, 0.72) !important;
+      }
       body.bg-sakura-dark,
-      body.bg-sakura-dark * { color: #f0efff !important; }
+      body.bg-sakura-dark * {
+        color: #f0efff !important;
+      }
       body.bg-sakura-dark input,
       body.bg-sakura-dark #aiInput,
       body.bg-sakura-dark #search {
-        border: 1.5px solid rgba(200,200,255,0.3) !important;
-        background: rgba(20,15,35,0.6) !important;
+        border: 1.5px solid rgba(200, 200, 255, 0.3) !important;
+        background: rgba(20, 15, 35, 0.6) !important;
         color: #f0efff !important;
       }
       body.bg-sakura-dark .actions button,
@@ -359,7 +498,17 @@
           inset 0 1px 0 rgba(255, 255, 255, 0.08);
         position: absolute;
         cursor: grab;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
       }
+      #mainBody {
+        overflow-y: auto;
+        overflow-x: hidden;
+        flex: 1;
+        scrollbar-width: none;
+      }
+      #mainBody::-webkit-scrollbar { display: none; }
       .card:active {
         cursor: grabbing;
       }
@@ -404,6 +553,41 @@
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
       }
 
+      /* DRAG GRID OVERLAY */
+      #dragGrid {
+        display: none;
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 9998;
+        background-image:
+          linear-gradient(var(--border) 1px, transparent 1px),
+          linear-gradient(90deg, var(--border) 1px, transparent 1px);
+        background-size: 20px 20px;
+        transition: opacity 0.15s;
+      }
+      #dragGrid.active {
+        display: block;
+      }
+      /* snap ghost: outline that shows the snapped target while dragging */
+      #snapGhost {
+        display: none;
+        position: fixed;
+        pointer-events: none;
+        z-index: 9997;
+        border: 2px dashed rgba(249, 168, 212, 0.55);
+        border-radius: 14px;
+        box-shadow: 0 0 18px rgba(249, 168, 212, 0.18);
+        transition:
+          left 0.04s,
+          top 0.04s,
+          width 0.04s,
+          height 0.04s;
+      }
+      #snapGhost.active {
+        display: block;
+      }
+
       /* WIDGET CAROUSEL */
       .widget-carousel-wrap {
         position: relative;
@@ -417,7 +601,9 @@
         scrollbar-width: none;
         padding-bottom: 4px;
       }
-      .grid::-webkit-scrollbar { display: none; }
+      .grid::-webkit-scrollbar {
+        display: none;
+      }
       .widget {
         padding: 15px;
         border-radius: 14px;
@@ -431,61 +617,117 @@
       }
       .widget-arrow {
         position: absolute;
-        top: 50%; transform: translateY(-50%);
-        background: rgba(10,20,15,0.75);
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(10, 20, 15, 0.75);
         border: 1px solid var(--border);
         border-radius: 50%;
-        width: 28px; height: 28px;
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; z-index: 10;
-        color: var(--text); opacity: 0;
-        transition: opacity 0.2s, background 0.2s;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        color: var(--text);
+        opacity: 0;
+        transition:
+          opacity 0.2s,
+          background 0.2s;
         backdrop-filter: blur(6px);
       }
-      .widget-carousel-wrap:hover .widget-arrow { opacity: 1; }
-      .widget-arrow:hover { background: var(--accent); color: #000; border-color: var(--accent); }
-      .widget-arrow.left { left: -14px; }
-      .widget-arrow.right { right: -14px; }
-      .widget-arrow svg { pointer-events: none; }
-      .widget-merge-btn {
-        position: absolute; top: 10px; right: 10px;
-        background: none; border: 1px solid var(--border);
-        border-radius: 6px; color: var(--muted);
-        font-size: 11px; padding: 2px 7px; cursor: pointer;
-        opacity: 0; transition: opacity 0.15s;
+      .widget-carousel-wrap:hover .widget-arrow {
+        opacity: 1;
       }
-      .widget:hover .widget-merge-btn { opacity: 1; }
+      .widget-arrow:hover {
+        background: var(--accent);
+        color: #000;
+        border-color: var(--accent);
+      }
+      .widget-arrow.left {
+        left: -14px;
+      }
+      .widget-arrow.right {
+        right: -14px;
+      }
+      .widget-arrow svg {
+        pointer-events: none;
+      }
+      .widget-merge-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        padding: 2px 7px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .widget:hover .widget-merge-btn {
+        opacity: 1;
+      }
       .widget-merge-btn.selecting {
-        border-color: var(--accent); color: var(--accent); opacity: 1;
+        border-color: var(--accent);
+        color: var(--accent);
+        opacity: 1;
       }
       .widget.merge-target {
         border-color: var(--accent);
-        box-shadow: 0 0 0 2px var(--accent), inset 0 1px 0 rgba(255,255,255,0.05);
+        box-shadow:
+          0 0 0 2px var(--accent),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
         cursor: pointer;
       }
       /* MERGED PANEL TABS */
       .widget-tabs {
-        display: flex; gap: 4px; margin-bottom: 12px;
-        border-bottom: 1px solid var(--border); padding-bottom: 8px;
+        display: flex;
+        gap: 4px;
+        margin-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
       }
       .widget-tab {
-        padding: 3px 12px; border-radius: 8px; font-size: 12px;
-        font-weight: 600; cursor: pointer; border: none;
-        background: none; color: var(--muted); transition: all 0.15s;
+        padding: 3px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: var(--muted);
+        transition: all 0.15s;
       }
       .widget-tab.active {
-        background: rgba(255,255,255,0.08); color: var(--text);
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
       }
-      .widget-tab-content { display: none; }
-      .widget-tab-content.active { display: block; }
+      .widget-tab-content {
+        display: none;
+      }
+      .widget-tab-content.active {
+        display: block;
+      }
       .widget-unmerge-btn {
-        position: absolute; top: 10px; right: 10px;
-        background: none; border: 1px solid var(--border);
-        border-radius: 6px; color: var(--muted);
-        font-size: 11px; padding: 2px 7px; cursor: pointer;
-        opacity: 0; transition: opacity 0.15s;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--muted);
+        font-size: 11px;
+        padding: 2px 7px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.15s;
       }
-      .widget:hover .widget-unmerge-btn { opacity: 1; }
+      .widget:hover .widget-unmerge-btn {
+        opacity: 1;
+      }
 
       /* BACKGROUNDS */
       .bg-art {
@@ -612,34 +854,46 @@
         backdrop-filter: blur(12px);
         letter-spacing: 0.05em;
       }
-      .focus-mode #exitFocusBtn { display: block; }
+      .focus-mode #exitFocusBtn {
+        display: block;
+      }
 
       /* ===== SAKURA INTRO ANIMATIONS ===== */
       @keyframes sakuraBurnIn {
         0% {
           opacity: 0;
-          filter: brightness(6) sepia(1) hue-rotate(-40deg) saturate(12) blur(6px);
-          box-shadow: 0 0 100px 40px rgba(255,70,0,0.8), 0 0 200px 80px rgba(255,30,0,0.45), inset 0 0 60px rgba(255,110,0,0.65);
+          filter: brightness(6) sepia(1) hue-rotate(-40deg) saturate(12)
+            blur(6px);
+          box-shadow:
+            0 0 100px 40px rgba(255, 70, 0, 0.8),
+            0 0 200px 80px rgba(255, 30, 0, 0.45),
+            inset 0 0 60px rgba(255, 110, 0, 0.65);
         }
         15% {
           opacity: 0.55;
-          filter: brightness(4) sepia(1) hue-rotate(-30deg) saturate(9) blur(3px);
-          box-shadow: 0 0 70px 28px rgba(255,100,10,0.65), 0 0 130px 55px rgba(255,50,0,0.35);
+          filter: brightness(4) sepia(1) hue-rotate(-30deg) saturate(9)
+            blur(3px);
+          box-shadow:
+            0 0 70px 28px rgba(255, 100, 10, 0.65),
+            0 0 130px 55px rgba(255, 50, 0, 0.35);
         }
         35% {
           opacity: 0.78;
-          filter: brightness(2.5) sepia(0.8) hue-rotate(-18deg) saturate(6) blur(1px);
-          box-shadow: 0 0 45px 16px rgba(255,140,20,0.45), 0 0 80px 35px rgba(255,70,0,0.22);
+          filter: brightness(2.5) sepia(0.8) hue-rotate(-18deg) saturate(6)
+            blur(1px);
+          box-shadow:
+            0 0 45px 16px rgba(255, 140, 20, 0.45),
+            0 0 80px 35px rgba(255, 70, 0, 0.22);
         }
         58% {
           opacity: 0.91;
           filter: brightness(1.6) sepia(0.3) saturate(2.2) hue-rotate(-5deg);
-          box-shadow: 0 0 22px 7px rgba(255,180,70,0.2);
+          box-shadow: 0 0 22px 7px rgba(255, 180, 70, 0.2);
         }
         80% {
           opacity: 0.97;
           filter: brightness(1.1) sepia(0.06);
-          box-shadow: 0 0 8px 2px rgba(255,210,140,0.08);
+          box-shadow: 0 0 8px 2px rgba(255, 210, 140, 0.08);
         }
         100% {
           opacity: 1;
@@ -649,15 +903,32 @@
       }
 
       @keyframes sakuraTreeGrow {
-        0%   { clip-path: inset(100% 0 0 0); opacity: 0; }
-        8%   { opacity: 1; }
-        100% { clip-path: inset(0% 0 0 0); opacity: 1; }
+        0% {
+          clip-path: inset(100% 0 0 0);
+          opacity: 0;
+        }
+        8% {
+          opacity: 1;
+        }
+        100% {
+          clip-path: inset(0% 0 0 0);
+          opacity: 1;
+        }
       }
 
       @keyframes sakuraPetalBurst {
-        0%   { opacity: 0; transform: scale(0); }
-        40%  { opacity: 1; transform: scale(1.08); }
-        100% { opacity: 1; transform: scale(1); }
+        0% {
+          opacity: 0;
+          transform: scale(0);
+        }
+        40% {
+          opacity: 1;
+          transform: scale(1.08);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
 
       .sakura-burn-in {
@@ -935,7 +1206,7 @@
         padding: 14px 16px;
         border-radius: 12px;
         outline: none;
-        border: 1px solid rgba(255,255,255,0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         background: rgba(255, 255, 255, 0.05);
         color: white;
         font-size: 14px;
@@ -945,31 +1216,44 @@
 
       /* ===== SUBSCRIPTION MODAL ===== */
       .sub-overlay {
-        position: fixed; inset: 0; z-index: 500;
-        background: rgba(0,0,0,0.6);
+        position: fixed;
+        inset: 0;
+        z-index: 500;
+        background: rgba(0, 0, 0, 0.6);
         backdrop-filter: blur(6px);
-        display: none; align-items: center; justify-content: center;
+        display: none;
+        align-items: center;
+        justify-content: center;
       }
-      .sub-overlay.open { display: flex; }
+      .sub-overlay.open {
+        display: flex;
+      }
       .sub-modal {
         position: relative;
-        background: rgba(10,20,15,0.95);
-        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(10, 20, 15, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 24px;
         padding: 36px 32px;
         width: 680px;
         max-width: 95vw;
-        box-shadow: 0 24px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07);
+        box-shadow:
+          0 24px 80px rgba(0, 0, 0, 0.6),
+          inset 0 1px 0 rgba(255, 255, 255, 0.07);
       }
       .sub-header {
         text-align: center;
         margin-bottom: 28px;
       }
       .sub-header h2 {
-        font-size: 22px; font-weight: 800;
-        color: var(--text); margin-bottom: 6px;
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--text);
+        margin-bottom: 6px;
       }
-      .sub-header p { font-size: 13px; color: var(--muted); }
+      .sub-header p {
+        font-size: 13px;
+        color: var(--muted);
+      }
       .sub-plans {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -979,53 +1263,101 @@
         border: 1px solid var(--border);
         border-radius: 16px;
         padding: 20px 16px;
-        display: flex; flex-direction: column; gap: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
         position: relative;
         transition: border-color 0.2s;
       }
       .sub-plan.popular {
         border-color: var(--accent);
-        box-shadow: 0 0 24px rgba(249,168,212,0.08);
+        box-shadow: 0 0 24px rgba(249, 168, 212, 0.08);
       }
       .sub-plan-badge {
-        position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
-        background: var(--accent); color: #000;
-        font-size: 10px; font-weight: 700;
-        padding: 2px 12px; border-radius: 20px;
-        letter-spacing: 0.08em; white-space: nowrap;
+        position: absolute;
+        top: -11px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--accent);
+        color: #000;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 12px;
+        border-radius: 20px;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
       }
       .sub-plan-name {
-        font-size: 13px; font-weight: 700;
-        color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
       }
       .sub-plan-price {
-        font-size: 30px; font-weight: 800; color: var(--text); line-height: 1;
+        font-size: 30px;
+        font-weight: 800;
+        color: var(--text);
+        line-height: 1;
       }
-      .sub-plan-price span { font-size: 13px; font-weight: 400; color: var(--muted); }
+      .sub-plan-price span {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--muted);
+      }
       .sub-plan-features {
-        list-style: none; display: flex; flex-direction: column; gap: 7px;
-        font-size: 12.5px; color: var(--muted); flex: 1;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        font-size: 12.5px;
+        color: var(--muted);
+        flex: 1;
       }
-      .sub-plan-features li::before { content: "✓ "; color: var(--accent); font-weight: 700; }
-      .sub-plan-features li.no::before { content: "✕ "; color: rgba(255,255,255,0.2); }
-      .sub-plan-features li.no { opacity: 0.4; }
+      .sub-plan-features li::before {
+        content: "✓ ";
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .sub-plan-features li.no::before {
+        content: "✕ ";
+        color: rgba(255, 255, 255, 0.2);
+      }
+      .sub-plan-features li.no {
+        opacity: 0.4;
+      }
       .sub-plan-btn {
-        width: 100%; padding: 10px;
-        border-radius: 10px; font-size: 13px; font-weight: 600;
-        cursor: pointer; border: 1px solid var(--border);
-        background: rgba(255,255,255,0.05); color: var(--text);
+        width: 100%;
+        padding: 10px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
         transition: all 0.2s;
       }
       .sub-plan.popular .sub-plan-btn {
-        background: var(--accent); color: #000; border-color: var(--accent);
+        background: var(--accent);
+        color: #000;
+        border-color: var(--accent);
       }
-      .sub-plan-btn:hover { opacity: 0.85; }
+      .sub-plan-btn:hover {
+        opacity: 0.85;
+      }
       .sub-close {
-        display: block; text-align: center; margin-top: 20px;
-        font-size: 12px; color: var(--muted); cursor: pointer;
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 12px;
+        color: var(--muted);
+        cursor: pointer;
         opacity: 0.6;
       }
-      .sub-close:hover { opacity: 1; }
+      .sub-close:hover {
+        opacity: 1;
+      }
 
       /* ===== SETTINGS PANEL ===== */
       .settings-panel {
@@ -1253,25 +1585,68 @@
     <!-- AUTH MODAL -->
     <div class="auth-overlay" id="authModal">
       <div class="auth-box">
-        <button onclick="closeAuthModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
+        <button
+          onclick="closeAuthModal()"
+          style="
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 16px;
+            cursor: pointer;
+          "
+        >
+          ✕
+        </button>
         <h2 id="authTitle">Sign in to Bloscom</h2>
         <button class="auth-google-btn" onclick="bloscomGoogleSignIn()">
-          <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 48 48">
+            <path
+              fill="#EA4335"
+              d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+            />
+            <path
+              fill="#4285F4"
+              d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+            />
+            <path
+              fill="#34A853"
+              d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+            />
+          </svg>
           Continue with Google
         </button>
         <div class="auth-divider">— or —</div>
-        <input type="email" id="authEmail" placeholder="Email"/>
-        <input type="password" id="authPassword" placeholder="Password"/>
+        <input type="email" id="authEmail" placeholder="Email" />
+        <input type="password" id="authPassword" placeholder="Password" />
         <div id="authError"></div>
-        <button class="auth-btn" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign In</button>
-        <button class="auth-btn secondary" onclick="closeAuthModal()">Cancel</button>
-        <div class="auth-switch" id="authSwitch">Don't have an account? <span onclick="toggleAuthMode()">Sign up</span></div>
+        <button
+          class="auth-btn"
+          id="authSubmitBtn"
+          onclick="handleAuthSubmit()"
+        >
+          Sign In
+        </button>
+        <button class="auth-btn secondary" onclick="closeAuthModal()">
+          Cancel
+        </button>
+        <div class="auth-switch" id="authSwitch">
+          Don't have an account? <span onclick="toggleAuthMode()">Sign up</span>
+        </div>
       </div>
     </div>
 
     <button id="exitFocusBtn" onclick="toggleFocus()">✕ Exit Focus</button>
     <div class="cursor-dot"></div>
     <div class="cursor-ring"></div>
+    <div id="dragGrid"></div>
+    <div id="snapGhost"></div>
 
     <div class="bg-art"><div class="leaves"></div></div>
 
@@ -1285,63 +1660,243 @@
       </div>
 
       <div id="mainBody">
-      <input id="search" placeholder="Search or type a command..." />
+        <input id="search" placeholder="Search or type a command..." />
 
-      <div class="actions">
-        <div id="quickLinks" style="display:contents;"></div>
-        <button onclick="toggleLinksEditor()" title="Edit shortcuts">＋ Link</button>
-        <button onclick="addTask()">+ Task</button>
-        <button onclick="resetLayoutToDefault()">Reset Layout</button>
-        <button onclick="toggleFocus()">Focus</button>
-        <button id="aiToggleBtn" onclick="toggleAI()">BLOSCOM-AI</button>
-        <button onclick="toggleSettings()">Settings</button>
-        <button onclick="toggleSub()" style="border-color:var(--accent);color:var(--accent);">✦ Upgrade</button>
-        <div id="userBadge" onclick="bloscomSignOut()">
-          <span id="userBadgeName"></span>
-          <span id="planBadge"></span>
+        <div class="actions">
+          <div id="quickLinks" style="display: contents"></div>
+          <button onclick="toggleLinksEditor()" title="Edit shortcuts">
+            ＋ Link
+          </button>
+          <button onclick="addTask()">+ Task</button>
+          <button onclick="resetLayoutToDefault()">Reset Layout</button>
+          <button onclick="toggleFocus()">Focus</button>
+          <button id="aiToggleBtn" onclick="toggleAI()">BLOSCOM-AI</button>
+          <button onclick="toggleSettings()">Settings</button>
+          <button
+            onclick="toggleSub()"
+            style="border-color: var(--accent); color: var(--accent)"
+          >
+            ✦ Upgrade
+          </button>
+          <div id="userBadge" onclick="bloscomSignOut()">
+            <span id="userBadgeName"></span>
+            <span id="planBadge"></span>
+          </div>
+          <button
+            id="signInBtn"
+            onclick="openAuthModal()"
+            style="border-color: var(--accent); color: var(--accent)"
+          >
+            Sign In
+          </button>
         </div>
-        <button id="signInBtn" onclick="openAuthModal()" style="border-color:var(--accent);color:var(--accent);">Sign In</button>
-      </div>
 
-      <div class="widget-carousel-wrap">
-        <button class="widget-arrow left" onclick="scrollWidgets(-1)">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div class="grid" id="widgetGrid">
-          <div class="widget" id="widget-weather" data-label="Weather">
-            <button class="widget-merge-btn" onclick="startMerge('widget-weather')">⊕ Merge</button>
-            <b><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>Weather</b>
-            <div id="weatherInfo" style="margin-top:6px;font-size:13px;color:var(--muted)">Loading...</div>
+        <div class="widget-carousel-wrap">
+          <button class="widget-arrow left" onclick="scrollWidgets(-1)">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <div class="grid" id="widgetGrid">
+            <div class="widget" id="widget-weather" data-label="Weather">
+              <button
+                class="widget-merge-btn"
+                onclick="startMerge('widget-weather')"
+              >
+                ⊕ Merge
+              </button>
+              <b
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="vertical-align: -2px; margin-right: 5px"
+                >
+                  <circle cx="12" cy="12" r="4" />
+                  <path
+                    d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                  /></svg
+                >Weather</b
+              >
+              <div
+                id="weatherInfo"
+                style="margin-top: 6px; font-size: 13px; color: var(--muted)"
+              >
+                Loading...
+              </div>
+            </div>
+            <div class="widget" id="widget-tasks" data-label="Tasks">
+              <button
+                class="widget-merge-btn"
+                onclick="startMerge('widget-tasks')"
+              >
+                ⊕ Merge
+              </button>
+              <b
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="vertical-align: -2px; margin-right: 5px"
+                >
+                  <path d="M9 11l3 3L22 4" />
+                  <path
+                    d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"
+                  /></svg
+                >Tasks</b
+              >
+              <ul id="tasks"></ul>
+            </div>
+            <div class="widget" id="widget-news" data-label="News">
+              <b
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="vertical-align: -2px; margin-right: 5px"
+                >
+                  <path
+                    d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"
+                  />
+                  <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z" /></svg
+                >News</b
+              >
+              <div
+                id="newsWidget"
+                style="
+                  margin-top: 8px;
+                  font-size: 12px;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 7px;
+                  color: var(--muted);
+                "
+              >
+                Loading...
+              </div>
+            </div>
+            <div class="widget" id="widget-quote" data-label="Quote">
+              <b
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="vertical-align: -2px; margin-right: 5px"
+                >
+                  <path
+                    d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"
+                  />
+                  <path
+                    d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"
+                  /></svg
+                >Quote</b
+              >
+              <div
+                id="quoteWidget"
+                style="
+                  margin-top: 8px;
+                  font-size: 12px;
+                  font-style: italic;
+                  color: var(--muted);
+                  line-height: 1.5;
+                "
+              >
+                Loading...
+              </div>
+            </div>
+            <div class="widget" id="widget-date" data-label="Date">
+              <b
+                ><svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  style="vertical-align: -2px; margin-right: 5px"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" /></svg
+                >Date</b
+              >
+              <div
+                id="dateWidget"
+                style="margin-top: 8px; font-size: 13px; color: var(--muted)"
+              ></div>
+            </div>
           </div>
-          <div class="widget" id="widget-tasks" data-label="Tasks">
-            <button class="widget-merge-btn" onclick="startMerge('widget-tasks')">⊕ Merge</button>
-            <b><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Tasks</b>
-            <ul id="tasks"></ul>
-          </div>
-          <div class="widget" id="widget-news" data-label="News">
-            <b><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>News</b>
-            <div id="newsWidget" style="margin-top:8px;font-size:12px;display:flex;flex-direction:column;gap:7px;color:var(--muted)">Loading...</div>
-          </div>
-          <div class="widget" id="widget-quote" data-label="Quote">
-            <b><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>Quote</b>
-            <div id="quoteWidget" style="margin-top:8px;font-size:12px;font-style:italic;color:var(--muted);line-height:1.5">Loading...</div>
-          </div>
-          <div class="widget" id="widget-date" data-label="Date">
-            <b><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Date</b>
-            <div id="dateWidget" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
-          </div>
+          <button class="widget-arrow right" onclick="scrollWidgets(1)">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
         </div>
-        <button class="widget-arrow right" onclick="scrollWidgets(1)">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
       </div>
-      </div><!-- end mainBody -->
+      <!-- end mainBody -->
     </div>
 
     <!-- SUBSCRIPTION MODAL -->
     <div class="sub-overlay" id="subModal">
       <div class="sub-modal">
-        <button onclick="toggleSub()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+        <button
+          onclick="toggleSub()"
+          style="
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 18px;
+            cursor: pointer;
+            line-height: 1;
+          "
+        >
+          ✕
+        </button>
         <div class="sub-header">
           <h2>Choose your plan</h2>
           <p>Unlock the full Bloscom experience</p>
@@ -1392,23 +1947,87 @@
             <button class="sub-plan-btn">Upgrade to Max</button>
           </div>
         </div>
-        <span class="sub-close" onclick="toggleSub()">No thanks, continue with Free</span>
+        <span class="sub-close" onclick="toggleSub()"
+          >No thanks, continue with Free</span
+        >
       </div>
     </div>
 
     <!-- LINKS EDITOR -->
     <div class="sub-overlay" id="linksModal">
-      <div class="sub-modal" style="width:420px;">
-        <button onclick="toggleLinksEditor()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+      <div class="sub-modal" style="width: 420px">
+        <button
+          onclick="toggleLinksEditor()"
+          style="
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 18px;
+            cursor: pointer;
+            line-height: 1;
+          "
+        >
+          ✕
+        </button>
         <div class="sub-header">
           <h2>Quick Links</h2>
           <p>Add your favourite sites to the action bar</p>
         </div>
-        <div id="linksList" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;margin-bottom:16px;"></div>
-        <div style="display:flex;gap:8px;">
-          <input id="linkNameInput" placeholder="Name (e.g. YouTube)" style="flex:1;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);font-size:13px;"/>
-          <input id="linkUrlInput" placeholder="URL (e.g. https://youtube.com)" style="flex:2;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text);font-size:13px;"/>
-          <button onclick="addLink()" style="padding:8px 14px;border-radius:10px;background:var(--accent);color:#000;border:none;font-weight:700;cursor:pointer;">Add</button>
+        <div
+          id="linksList"
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+          "
+        ></div>
+        <div style="display: flex; gap: 8px">
+          <input
+            id="linkNameInput"
+            placeholder="Name (e.g. YouTube)"
+            style="
+              flex: 1;
+              padding: 8px 12px;
+              border-radius: 10px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid var(--border);
+              color: var(--text);
+              font-size: 13px;
+            "
+          />
+          <input
+            id="linkUrlInput"
+            placeholder="URL (e.g. https://youtube.com)"
+            style="
+              flex: 2;
+              padding: 8px 12px;
+              border-radius: 10px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid var(--border);
+              color: var(--text);
+              font-size: 13px;
+            "
+          />
+          <button
+            onclick="addLink()"
+            style="
+              padding: 8px 14px;
+              border-radius: 10px;
+              background: var(--accent);
+              color: #000;
+              border: none;
+              font-weight: 700;
+              cursor: pointer;
+            "
+          >
+            Add
+          </button>
         </div>
       </div>
     </div>
@@ -1416,8 +2035,29 @@
     <!-- MERGED PANEL -->
     <div id="mergedPanel">
       <div id="mergedHandle">
-        <span style="font-size:12px;font-weight:600;color:var(--muted);letter-spacing:0.08em;">BLOSCOM</span>
-        <button onclick="unmergeAll()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 4px;" title="Split panels">⊖ Split</button>
+        <span
+          style="
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+          "
+          >BLOSCOM</span
+        >
+        <button
+          onclick="unmergeAll()"
+          style="
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 13px;
+            padding: 0 4px;
+          "
+          title="Split panels"
+        >
+          ⊖ Split
+        </button>
       </div>
       <div id="mergedInner"></div>
     </div>
@@ -1458,8 +2098,32 @@
             Galaxy
           </button>
           <button data-bg="none" onclick="applyBackground('none')">None</button>
-          <button data-bg="sakura" onclick="applyBackground('sakura')" style="border:1.5px solid rgba(255,140,180,0.9);color:#ffb0cc;box-shadow:0 0 8px rgba(255,140,180,0.5),inset 0 0 6px rgba(255,180,210,0.15);">Bloscom</button>
-          <button data-bg="sakura-dark" onclick="applyBackground('sakura-dark')" style="border:1.5px solid rgba(180,180,255,0.9);color:#c8c8ff;box-shadow:0 0 8px rgba(180,180,255,0.5),inset 0 0 6px rgba(200,200,255,0.15);">Dark Bloscom</button>
+          <button
+            data-bg="sakura"
+            onclick="applyBackground('sakura')"
+            style="
+              border: 1.5px solid rgba(255, 140, 180, 0.9);
+              color: #ffb0cc;
+              box-shadow:
+                0 0 8px rgba(255, 140, 180, 0.5),
+                inset 0 0 6px rgba(255, 180, 210, 0.15);
+            "
+          >
+            Bloscom
+          </button>
+          <button
+            data-bg="sakura-dark"
+            onclick="applyBackground('sakura-dark')"
+            style="
+              border: 1.5px solid rgba(180, 180, 255, 0.9);
+              color: #c8c8ff;
+              box-shadow:
+                0 0 8px rgba(180, 180, 255, 0.5),
+                inset 0 0 6px rgba(200, 200, 255, 0.15);
+            "
+          >
+            Dark Bloscom
+          </button>
         </div>
         <div class="settings-label" style="margin-top: 6px">Your Name</div>
         <input type="text" id="nameInput" placeholder="Enter your name..." />
@@ -1514,7 +2178,6 @@
       </div>
     </div>
 
-
     <!-- JARVIS PANEL -->
     <div class="ai-panel" id="aiPanel">
       <!-- History sidebar -->
@@ -1559,35 +2222,39 @@
           <button class="panel-close" onclick="toggleAI()">✕</button>
         </div>
       </div>
-      <div id="aiBody" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
-      <div class="ai-messages" id="aiMessages">
-        <div
-          id="aiPlaceholder"
-          style="
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            opacity: 0.22;
-            pointer-events: none;
-            user-select: none;
-          "
-        >
-          <img
-            src="Untitled design.svg"
+      <div
+        id="aiBody"
+        style="display: flex; flex-direction: column; flex: 1; overflow: hidden"
+      >
+        <div class="ai-messages" id="aiMessages">
+          <div
+            id="aiPlaceholder"
             style="
-              width: 200px;
-              height: 200px;
-              object-fit: contain;
-              mix-blend-mode: screen;
-              filter: grayscale(1) brightness(2.5);
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              height: 100%;
+              opacity: 0.22;
+              pointer-events: none;
+              user-select: none;
             "
-          />
+          >
+            <img
+              src="Untitled design.svg"
+              style="
+                width: 200px;
+                height: 200px;
+                object-fit: contain;
+                mix-blend-mode: screen;
+                filter: grayscale(1) brightness(2.5);
+              "
+            />
+          </div>
         </div>
+        <input id="aiInput" placeholder="Ask something..." />
       </div>
-      <input id="aiInput" placeholder="Ask something..." />
-      </div><!-- end aiBody -->
+      <!-- end aiBody -->
     </div>
 
     <script>
@@ -1758,8 +2425,11 @@
         } else if (type === "grid") {
           document.body.classList.add("bg-grid");
         }
-        document.body.classList.toggle("bg-sakura",      type === "sakura");
-        document.body.classList.toggle("bg-sakura-dark", type === "sakura-dark");
+        document.body.classList.toggle("bg-sakura", type === "sakura");
+        document.body.classList.toggle(
+          "bg-sakura-dark",
+          type === "sakura-dark",
+        );
         if (type === "sakura" || type === "sakura-dark") {
           const darkMode = type === "sakura-dark";
           document.body.style.background = darkMode
@@ -1767,46 +2437,60 @@
             : "linear-gradient(180deg,#d9a8be 0%,#cc94ae 50%,#be809e 100%)";
           const canvas = document.createElement("canvas");
           canvas.id = "sakuraCanvas";
-          canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;";
+          canvas.style.cssText =
+            "position:absolute;inset:0;width:100%;height:100%;";
           container.appendChild(canvas);
 
-          let W = canvas.width = window.innerWidth;
-          let H = canvas.height = window.innerHeight;
+          let W = (canvas.width = window.innerWidth);
+          let H = (canvas.height = window.innerHeight);
           const ctx = canvas.getContext("2d");
 
           // Draw tree once on offscreen canvas
           const treeCanvas = document.createElement("canvas");
-          treeCanvas.width = W; treeCanvas.height = H;
+          treeCanvas.width = W;
+          treeCanvas.height = H;
           const tctx = treeCanvas.getContext("2d");
 
           // Anime-style cherry blossom tree with thick curved trunk
           function drawAnimeTree(baseX, leanDir, scale) {
-            const trunkH = H * 0.40 * scale;
+            const trunkH = H * 0.4 * scale;
             // Cubic bezier control points for S-curved trunk
             const cp1x = baseX + leanDir * 40 * scale;
             const cp1y = H - trunkH * 0.35;
             const cp2x = baseX + leanDir * 90 * scale;
             const cp2y = H - trunkH * 0.65;
-            const topX  = baseX + leanDir * 70 * scale;
-            const topY  = H - trunkH;
+            const topX = baseX + leanDir * 70 * scale;
+            const topY = H - trunkH;
 
             // Fill thick tapered trunk: sample points along bezier, draw filled circles
             const steps = 80;
             for (let i = 0; i <= steps; i++) {
               const t = i / steps;
               const mt = 1 - t;
-              const px = mt*mt*mt*baseX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*topX;
-              const py = mt*mt*mt*H      + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*topY;
-              const r  = Math.max(2, (22 - t * 18) * scale);
+              const px =
+                mt * mt * mt * baseX +
+                3 * mt * mt * t * cp1x +
+                3 * mt * t * t * cp2x +
+                t * t * t * topX;
+              const py =
+                mt * mt * mt * H +
+                3 * mt * mt * t * cp1y +
+                3 * mt * t * t * cp2y +
+                t * t * t * topY;
+              const r = Math.max(2, (22 - t * 18) * scale);
               // Inner dark core
               tctx.beginPath();
-              tctx.arc(px, py, r, 0, Math.PI*2);
-              tctx.fillStyle = darkMode ? `rgba(18,12,30,0.98)` : `rgba(55,28,14,0.95)`;
+              tctx.arc(px, py, r, 0, Math.PI * 2);
+              tctx.fillStyle = darkMode
+                ? `rgba(18,12,30,0.98)`
+                : `rgba(55,28,14,0.95)`;
               tctx.fill();
               // Lighter edge for volume
               tctx.beginPath();
-              tctx.arc(px + r*0.3, py - r*0.2, r * 0.55, 0, Math.PI*2);
-              tctx.fillStyle = darkMode ? `rgba(80,60,120,0.25)` : `rgba(110,60,30,0.35)`;
+              tctx.arc(px + r * 0.3, py - r * 0.2, r * 0.55, 0, Math.PI * 2);
+              tctx.fillStyle = darkMode
+                ? `rgba(80,60,120,0.25)`
+                : `rgba(110,60,30,0.35)`;
               tctx.fill();
             }
 
@@ -1823,8 +2507,12 @@
               tctx.moveTo(x, y);
               tctx.quadraticCurveTo(cpx, cpy, ex, ey);
               tctx.strokeStyle = darkMode
-                ? (depth < 2 ? `rgba(22,14,38,0.95)` : `rgba(40,25,65,0.88)`)
-                : (depth < 2 ? `rgba(65,32,16,0.92)` : `rgba(100,55,28,0.85)`);
+                ? depth < 2
+                  ? `rgba(22,14,38,0.95)`
+                  : `rgba(40,25,65,0.88)`
+                : depth < 2
+                  ? `rgba(65,32,16,0.92)`
+                  : `rgba(100,55,28,0.85)`;
               tctx.lineWidth = lw;
               tctx.lineCap = "round";
               tctx.stroke();
@@ -1832,48 +2520,75 @@
               if (depth >= 4) {
                 // Dense blossom clusters at tips
                 for (let b = 0; b < 10; b++) {
-                  const bx = ex + (Math.random()-0.5) * 30 * scale;
-                  const by = ey + (Math.random()-0.5) * 30 * scale;
-                  const br = (5 + Math.random()*8) * scale;
+                  const bx = ex + (Math.random() - 0.5) * 30 * scale;
+                  const by = ey + (Math.random() - 0.5) * 30 * scale;
+                  const br = (5 + Math.random() * 8) * scale;
                   tctx.beginPath();
-                  tctx.arc(bx, by, br, 0, Math.PI*2);
+                  tctx.arc(bx, by, br, 0, Math.PI * 2);
                   let pr, pg, pb;
                   if (darkMode) {
-                    pr = 210 + Math.floor(Math.random()*45);
-                    pg = 210 + Math.floor(Math.random()*45);
-                    pb = 230 + Math.floor(Math.random()*25);
+                    pr = 210 + Math.floor(Math.random() * 45);
+                    pg = 210 + Math.floor(Math.random() * 45);
+                    pb = 230 + Math.floor(Math.random() * 25);
                   } else {
-                    pr = 220 + Math.floor(Math.random()*35);
-                    pg = 120 + Math.floor(Math.random()*60);
-                    pb = 155 + Math.floor(Math.random()*45);
+                    pr = 220 + Math.floor(Math.random() * 35);
+                    pg = 120 + Math.floor(Math.random() * 60);
+                    pb = 155 + Math.floor(Math.random() * 45);
                   }
-                  tctx.fillStyle = `rgba(${pr},${pg},${pb},${0.55+Math.random()*0.4})`;
+                  tctx.fillStyle = `rgba(${pr},${pg},${pb},${0.55 + Math.random() * 0.4})`;
                   tctx.fill();
                 }
               }
 
               if (depth < 5) {
-                branch(ex, ey, angle - 0.42 - Math.random()*0.18, len * 0.70, depth+1);
-                branch(ex, ey, angle + 0.38 + Math.random()*0.18, len * 0.68, depth+1);
-                if (depth < 3) branch(ex, ey, angle + leanDir*(0.1+Math.random()*0.2), len * 0.58, depth+2);
+                branch(
+                  ex,
+                  ey,
+                  angle - 0.42 - Math.random() * 0.18,
+                  len * 0.7,
+                  depth + 1,
+                );
+                branch(
+                  ex,
+                  ey,
+                  angle + 0.38 + Math.random() * 0.18,
+                  len * 0.68,
+                  depth + 1,
+                );
+                if (depth < 3)
+                  branch(
+                    ex,
+                    ey,
+                    angle + leanDir * (0.1 + Math.random() * 0.2),
+                    len * 0.58,
+                    depth + 2,
+                  );
               }
             }
 
             const blen = H * 0.15 * scale;
-            const baseAngle = -Math.PI/2 + leanDir * 0.28;
+            const baseAngle = -Math.PI / 2 + leanDir * 0.28;
             branch(topX, topY, baseAngle - 0.55, blen, 0);
-            branch(topX, topY, baseAngle - 0.10, blen * 0.90, 0);
+            branch(topX, topY, baseAngle - 0.1, blen * 0.9, 0);
             branch(topX, topY, baseAngle + 0.45, blen * 0.85, 0);
             // Extra side branch mid-trunk for anime look
             const midT = 0.55;
-            const midX = Math.pow(1-midT,3)*baseX + 3*Math.pow(1-midT,2)*midT*cp1x + 3*(1-midT)*midT*midT*cp2x + midT*midT*midT*topX;
-            const midY = Math.pow(1-midT,3)*H      + 3*Math.pow(1-midT,2)*midT*cp1y + 3*(1-midT)*midT*midT*cp2y + midT*midT*midT*topY;
-            branch(midX, midY, baseAngle - leanDir*0.9, blen * 0.65, 1);
+            const midX =
+              Math.pow(1 - midT, 3) * baseX +
+              3 * Math.pow(1 - midT, 2) * midT * cp1x +
+              3 * (1 - midT) * midT * midT * cp2x +
+              midT * midT * midT * topX;
+            const midY =
+              Math.pow(1 - midT, 3) * H +
+              3 * Math.pow(1 - midT, 2) * midT * cp1y +
+              3 * (1 - midT) * midT * midT * cp2y +
+              midT * midT * midT * topY;
+            branch(midX, midY, baseAngle - leanDir * 0.9, blen * 0.65, 1);
           }
 
           function drawAllTrees() {
             tctx.clearRect(0, 0, W, H);
-            drawAnimeTree(W * 0.22, 1, 1.3);   // one big tree, leans right
+            drawAnimeTree(W * 0.22, 1, 1.3); // one big tree, leans right
 
             // Ground petals (static)
             for (let i = 0; i < 120; i++) {
@@ -1881,17 +2596,25 @@
               const gy = H - Math.random() * 28;
               const gs = 3 + Math.random() * 5;
               tctx.beginPath();
-              tctx.ellipse(gx, gy, gs, gs*0.55, Math.random()*Math.PI, 0, Math.PI*2);
+              tctx.ellipse(
+                gx,
+                gy,
+                gs,
+                gs * 0.55,
+                Math.random() * Math.PI,
+                0,
+                Math.PI * 2,
+              );
               tctx.fillStyle = darkMode
-                ? `rgba(${205+Math.random()*50},${205+Math.random()*50},${225+Math.random()*30},${0.3+Math.random()*0.35})`
-                : `rgba(${230+Math.random()*25},${140+Math.random()*60},${170+Math.random()*40},${0.4+Math.random()*0.4})`;
+                ? `rgba(${205 + Math.random() * 50},${205 + Math.random() * 50},${225 + Math.random() * 30},${0.3 + Math.random() * 0.35})`
+                : `rgba(${230 + Math.random() * 25},${140 + Math.random() * 60},${170 + Math.random() * 40},${0.4 + Math.random() * 0.4})`;
               tctx.fill();
             }
           }
           drawAllTrees();
 
           // Falling petals
-          const petals = Array.from({length: 80}, () => ({
+          const petals = Array.from({ length: 80 }, () => ({
             x: Math.random() * W,
             y: Math.random() * H,
             vx: -0.4 - Math.random() * 0.8,
@@ -1902,9 +2625,15 @@
             swing: Math.random() * Math.PI * 2,
             swingSpeed: 0.015 + Math.random() * 0.02,
             opacity: 0.5 + Math.random() * 0.5,
-            r: darkMode ? 200 + Math.floor(Math.random()*55) : 215 + Math.floor(Math.random()*40),
-            g: darkMode ? 200 + Math.floor(Math.random()*55) : 130 + Math.floor(Math.random()*70),
-            b: darkMode ? 220 + Math.floor(Math.random()*35) : 160 + Math.floor(Math.random()*50),
+            r: darkMode
+              ? 200 + Math.floor(Math.random() * 55)
+              : 215 + Math.floor(Math.random() * 40),
+            g: darkMode
+              ? 200 + Math.floor(Math.random() * 55)
+              : 130 + Math.floor(Math.random() * 70),
+            b: darkMode
+              ? 220 + Math.floor(Math.random() * 35)
+              : 160 + Math.floor(Math.random() * 50),
           }));
 
           function drawPetal(ctx, x, y, size, angle, op, r, g, b) {
@@ -1912,7 +2641,7 @@
             ctx.translate(x, y);
             ctx.rotate(angle);
             ctx.beginPath();
-            ctx.ellipse(0, 0, size, size*0.55, 0, 0, Math.PI*2);
+            ctx.ellipse(0, 0, size, size * 0.55, 0, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(${r},${g},${b},${op})`;
             ctx.fill();
             ctx.restore();
@@ -1923,16 +2652,29 @@
             ctx.clearRect(0, 0, W, H);
             ctx.drawImage(treeCanvas, 0, 0);
 
-            petals.forEach(p => {
+            petals.forEach((p) => {
               p.swing += p.swingSpeed;
               p.x += p.vx + Math.sin(p.swing) * 0.6;
               p.y += p.vy;
               p.angle += p.spin;
 
-              if (p.y > H + 20) { p.y = -10; p.x = Math.random() * W; }
+              if (p.y > H + 20) {
+                p.y = -10;
+                p.x = Math.random() * W;
+              }
               if (p.x < -20) p.x = W + 10;
 
-              drawPetal(ctx, p.x, p.y, p.size, p.angle, p.opacity, p.r, p.g, p.b);
+              drawPetal(
+                ctx,
+                p.x,
+                p.y,
+                p.size,
+                p.angle,
+                p.opacity,
+                p.r,
+                p.g,
+                p.b,
+              );
             });
 
             sakuraFrame = requestAnimationFrame(drawSakura);
@@ -1940,7 +2682,7 @@
           drawSakura();
 
           // ── Sakura intro: tree rises, panels slide in, then burn ──
-          container._sakuraCanvas = canvas;  // expose for bg-switch code
+          container._sakuraCanvas = canvas; // expose for bg-switch code
 
           window.addEventListener("resize", () => {
             W = canvas.width = treeCanvas.width = window.innerWidth;
@@ -1951,7 +2693,10 @@
           container._stopSakura = () => cancelAnimationFrame(sakuraFrame);
         } else {
           document.body.style.background = "";
-          if (container._stopSakura) { container._stopSakura(); container._stopSakura = null; }
+          if (container._stopSakura) {
+            container._stopSakura();
+            container._stopSakura = null;
+          }
         }
 
         // "none" leaves container empty
@@ -2040,16 +2785,19 @@
         localStorage.setItem("bgType", type);
 
         // Update cursor color for sakura modes
-        const _dot  = document.querySelector(".cursor-dot");
+        const _dot = document.querySelector(".cursor-dot");
         const _ring = document.querySelector(".cursor-ring");
         if (_dot && _ring) {
           if (type === "sakura" || type === "sakura-dark") {
-            _dot.style.background   = "#ffffff";
+            _dot.style.background = "#ffffff";
             _ring.style.borderColor = "rgba(255,255,255,0.7)";
           } else {
-            const _hex = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#4ade80";
-            const _c   = hexToRgb(_hex);
-            _dot.style.background   = _hex;
+            const _hex =
+              getComputedStyle(document.documentElement)
+                .getPropertyValue("--accent")
+                .trim() || "#4ade80";
+            const _c = hexToRgb(_hex);
+            _dot.style.background = _hex;
             _ring.style.borderColor = `rgba(${_c.r},${_c.g},${_c.b},0.6)`;
           }
         }
@@ -2057,31 +2805,36 @@
         // Switch to per-background layout
         window._currentBg = type;
 
-        if ((type === "sakura" || type === "sakura-dark") && window._pageLoaded) {
+        if (
+          (type === "sakura" || type === "sakura-dark") &&
+          window._pageLoaded
+        ) {
           // ── Animated sakura transition ───────────────────────────
           const sakCanvas = document.querySelector(".leaves canvas");
           const def = getDefaultLayout();
-          const bgLayout = JSON.parse(localStorage.getItem(getPanelLayoutKey()) || "{}");
+          const bgLayout = JSON.parse(
+            localStorage.getItem(getPanelLayoutKey()) || "{}",
+          );
           const targetLayout = bgLayout.main ? bgLayout : def;
 
           const SLIDE = 900; // panel slide duration ms
-          const EASE  = 'cubic-bezier(0.4, 0, 0.2, 1)';
+          const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
           // Collect panels that need to move
-          const card    = document.querySelector(".card");
+          const card = document.querySelector(".card");
           const aiPanel = document.getElementById("aiPanel");
-          const sPanel  = document.getElementById("settingsPanel");
-          const mp      = document.getElementById("mergedPanel");
+          const sPanel = document.getElementById("settingsPanel");
+          const mp = document.getElementById("mergedPanel");
 
           // Make hidden panels visible at their current spot before moving
-          [aiPanel, sPanel].forEach(el => {
+          [aiPanel, sPanel].forEach((el) => {
             if (!el) return;
             if (el.style.display !== "flex") {
               el.style.transition = "none";
               el.style.visibility = "hidden";
-              el.style.display    = "flex";
-              el.style.right      = "auto";
-              el.style.bottom     = "auto";
+              el.style.display = "flex";
+              el.style.right = "auto";
+              el.style.bottom = "auto";
             }
           });
 
@@ -2091,71 +2844,80 @@
 
             if (card) {
               card.style.transition = moveFn;
-              card.style.left  = targetLayout.main.left  + "px";
-              card.style.top   = targetLayout.main.top   + "px";
+              card.style.left = targetLayout.main.left + "px";
+              card.style.top = targetLayout.main.top + "px";
               card.style.width = targetLayout.main.width + "px";
               card.style.maxWidth = "none";
             }
-            [{ el: aiPanel, pos: targetLayout.jarvis },
-             { el: sPanel,  pos: targetLayout.settings }].forEach(({ el, pos }) => {
+            [
+              { el: aiPanel, pos: targetLayout.jarvis },
+              { el: sPanel, pos: targetLayout.settings },
+            ].forEach(({ el, pos }) => {
               if (!el || !pos) return;
               el.style.visibility = "";
               el.style.transition = moveFn;
-              el.style.left   = pos.left   + "px";
-              el.style.top    = pos.top    + "px";
-              el.style.width  = pos.width  + "px";
+              el.style.left = pos.left + "px";
+              el.style.top = pos.top + "px";
+              el.style.width = pos.width + "px";
               el.style.height = pos.height + "px";
             });
 
             // Tree canvas rises up from bottom simultaneously
             if (sakCanvas) {
               sakCanvas.style.transition = "none";
-              sakCanvas.style.clipPath   = "inset(100% 0 0 0)";
-              sakCanvas.style.opacity    = "0";
+              sakCanvas.style.clipPath = "inset(100% 0 0 0)";
+              sakCanvas.style.opacity = "0";
               requestAnimationFrame(() => {
                 sakCanvas.style.transition = `clip-path 2.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease`;
-                sakCanvas.style.clipPath   = "inset(0% 0 0 0)";
-                sakCanvas.style.opacity    = "1";
+                sakCanvas.style.clipPath = "inset(0% 0 0 0)";
+                sakCanvas.style.opacity = "1";
               });
             }
 
             // After panels land → burn-in effect
             const burnTargets = [
-              { el: card,    delay: SLIDE + 100  },
-              { el: aiPanel, delay: SLIDE + 400  },
-              { el: sPanel,  delay: SLIDE + 700  },
-              { el: mp,      delay: SLIDE + 400  },
+              { el: card, delay: SLIDE + 100 },
+              { el: aiPanel, delay: SLIDE + 400 },
+              { el: sPanel, delay: SLIDE + 700 },
+              { el: mp, delay: SLIDE + 400 },
             ];
             burnTargets.forEach(({ el, delay }) => {
               if (!el || el.style.display === "none") return;
               setTimeout(() => {
-                if (card)    card.style.transition    = "";
+                if (card) card.style.transition = "";
                 if (aiPanel) aiPanel.style.transition = "";
-                if (sPanel)  sPanel.style.transition  = "";
+                if (sPanel) sPanel.style.transition = "";
                 el.classList.remove("sakura-burn-in");
                 void el.offsetWidth;
                 el.classList.add("sakura-burn-in");
-                el.addEventListener("animationend", () => el.classList.remove("sakura-burn-in"), { once: true });
+                el.addEventListener(
+                  "animationend",
+                  () => el.classList.remove("sakura-burn-in"),
+                  { once: true },
+                );
               }, delay);
             });
           });
-
         } else {
           // ── Non-animated snap (first load or non-sakura bg) ──────
-          const bgLayout = JSON.parse(localStorage.getItem(getPanelLayoutKey()) || "{}");
+          const bgLayout = JSON.parse(
+            localStorage.getItem(getPanelLayoutKey()) || "{}",
+          );
           const def = getDefaultLayout();
           const layout = bgLayout.main ? bgLayout : def;
-          const card    = document.querySelector(".card");
+          const card = document.querySelector(".card");
           const aiPanel = document.getElementById("aiPanel");
-          const sPanel  = document.getElementById("settingsPanel");
+          const sPanel = document.getElementById("settingsPanel");
           if (card) {
-            card.style.left  = layout.main.left  + "px";
-            card.style.top   = layout.main.top   + "px";
+            card.style.left = layout.main.left + "px";
+            card.style.top = layout.main.top + "px";
             card.style.width = layout.main.width + "px";
             card.style.maxWidth = "none";
           }
-          if (aiPanel?.style.display === "flex") openPanelAt(aiPanel, layout.jarvis);
-          if (sPanel?.style.display  === "flex") openPanelAt(sPanel,  layout.settings);
+          if (aiPanel?.style.display === "flex")
+            openPanelAt(aiPanel, layout.jarvis);
+          if (sPanel?.style.display === "flex")
+            openPanelAt(sPanel, layout.settings);
         }
       }
 
@@ -2177,15 +2939,18 @@
               parseInt(panel.style.height) || panel.offsetHeight,
               panel.scrollHeight + 10,
             ) + "px"
-          : (JSON.parse(localStorage.getItem(getPanelLayoutKey()) || "{}").settings
-              ?.height ?? 400) + "px";
+          : (JSON.parse(localStorage.getItem(getPanelLayoutKey()) || "{}")
+              .settings?.height ?? 400) + "px";
       }
 
       // CURSOR
       const dot = document.querySelector(".cursor-dot");
       const ring = document.querySelector(".cursor-ring");
-      if (window._currentBg === "sakura" || window._currentBg === "sakura-dark") {
-        dot.style.background   = "#ffffff";
+      if (
+        window._currentBg === "sakura" ||
+        window._currentBg === "sakura-dark"
+      ) {
+        dot.style.background = "#ffffff";
         ring.style.borderColor = "rgba(255,255,255,0.7)";
       }
       let mouseX = 0,
@@ -2211,23 +2976,29 @@
 
       // ── Auto-save layout whenever panels are moved or resized ──
       function autoSaveLayout() {
-        const card   = document.querySelector(".card");
-        const ai     = document.getElementById("aiPanel");
+        const card = document.querySelector(".card");
+        const ai = document.getElementById("aiPanel");
         const sPanel = document.getElementById("settingsPanel");
-        const mp     = document.getElementById("mergedPanel");
+        const mp = document.getElementById("mergedPanel");
 
         function rectOf(el) {
-          if (!el || el.style.display === 'none') return null;
+          if (!el || el.style.display === "none") return null;
           const r = el.getBoundingClientRect();
-          return { left: Math.round(r.left), top: Math.round(r.top), width: Math.round(r.width), height: Math.round(r.height) };
+          return {
+            left: Math.round(r.left),
+            top: Math.round(r.top),
+            width: Math.round(r.width),
+            height: Math.round(r.height),
+          };
         }
 
         const layout = {
-          main:     rectOf(card),
-          jarvis:   rectOf(ai),
+          main: rectOf(card),
+          jarvis: rectOf(ai),
           settings: rectOf(sPanel),
         };
-        if (layout.main) localStorage.setItem(getPanelLayoutKey(), JSON.stringify(layout));
+        if (layout.main)
+          localStorage.setItem(getPanelLayoutKey(), JSON.stringify(layout));
       }
 
       // Save on resize (uses ResizeObserver, debounced)
@@ -2236,10 +3007,46 @@
         clearTimeout(_resizeTimer);
         _resizeTimer = setTimeout(autoSaveLayout, 300);
       });
-      ['card', 'aiPanel', 'settingsPanel', 'mergedPanel'].forEach(id => {
-        const el = id === 'card' ? document.querySelector('.card') : document.getElementById(id);
+      ["card", "aiPanel", "settingsPanel", "mergedPanel"].forEach((id) => {
+        const el =
+          id === "card"
+            ? document.querySelector(".card")
+            : document.getElementById(id);
         if (el) _resizeObs.observe(el);
       });
+
+      // ── Snap-to-grid + edge snap zones ───────────────────────────
+      const GRID_SIZE = 20;
+      const _dragGrid = document.getElementById("dragGrid");
+      const _snapGhost = document.getElementById("snapGhost");
+
+      function snapV(v) {
+        return Math.round(v / GRID_SIZE) * GRID_SIZE;
+      }
+
+      function showDragGrid() {
+        _dragGrid.classList.add("active");
+      }
+      function hideDragGrid() {
+        _dragGrid.classList.remove("active");
+        _snapGhost.classList.remove("active");
+      }
+
+      function updateGhost(el) {
+        const r = el.getBoundingClientRect();
+        const sl = snapV(parseFloat(el.style.left) || r.left);
+        const st = snapV(parseFloat(el.style.top) || r.top);
+        _snapGhost.style.left = sl + "px";
+        _snapGhost.style.top = st + "px";
+        _snapGhost.style.width = r.width + "px";
+        _snapGhost.style.height = r.height + "px";
+        _snapGhost.classList.add("active");
+      }
+
+      function snapPanel(el) {
+        el.style.left = snapV(parseFloat(el.style.left)) + "px";
+        el.style.top = snapV(parseFloat(el.style.top)) + "px";
+      }
 
       // DRAG
       const card = document.querySelector(".card");
@@ -2249,6 +3056,7 @@
 
       card.addEventListener("mousedown", (e) => {
         isDragging = true;
+        showDragGrid();
         offsetX = e.clientX - card.offsetLeft;
         offsetY = e.clientY - card.offsetTop;
       });
@@ -2257,10 +3065,15 @@
         if (!isDragging) return;
         card.style.left = e.clientX - offsetX + "px";
         card.style.top = e.clientY - offsetY + "px";
+        updateGhost(card);
       });
 
       document.addEventListener("mouseup", () => {
-        if (isDragging) autoSaveLayout();
+        if (isDragging) {
+          snapPanel(card);
+          autoSaveLayout();
+          hideDragGrid();
+        }
         isDragging = false;
       });
 
@@ -2424,12 +3237,14 @@
         chatHistory.push({ role: "user", content: msg });
 
         try {
-          const idToken = window._firebaseUser ? await window._firebaseUser.getIdToken() : null;
+          const idToken = window._firebaseUser
+            ? await window._firebaseUser.getIdToken()
+            : null;
           const res = await fetch("http://localhost:3000/api/jarvis", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              ...(idToken ? { "Authorization": `Bearer ${idToken}` } : {}),
+              ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
             },
             body: JSON.stringify({
               message: msg,
@@ -2523,25 +3338,29 @@
       aiHeader.addEventListener("mousedown", (e) => {
         if (e.target.classList.contains("panel-close")) return;
         aiDragging = true;
+        showDragGrid();
         aiPanel.style.transition = "none";
+        aiPanel.style.right = "auto";
+        aiPanel.style.bottom = "auto";
         const rect = aiPanel.getBoundingClientRect();
         aiOffsetX = e.clientX - rect.left;
         aiOffsetY = e.clientY - rect.top;
-        aiPanel.style.right = "auto";
-        aiPanel.style.bottom = "auto";
       });
 
       document.addEventListener("mousemove", (e) => {
         if (!aiDragging) return;
         aiPanel.style.left = e.clientX - aiOffsetX + "px";
         aiPanel.style.top = e.clientY - aiOffsetY + "px";
-        showMergeHint('ai', true);
+        updateGhost(aiPanel);
+        showMergeHint("ai", true);
       });
 
       document.addEventListener("mouseup", () => {
         if (aiDragging) {
-          showMergeHint('ai', false);
-          checkMergeOnDrop('ai');
+          snapPanel(aiPanel);
+          hideDragGrid();
+          showMergeHint("ai", false);
+          checkMergeOnDrop("ai");
           autoSaveLayout();
         }
         aiDragging = false;
@@ -2580,7 +3399,7 @@
 
       // ===== QUICK LINKS =====
       const DEFAULT_LINKS = [
-        { name: "Google",  url: "https://google.com" },
+        { name: "Google", url: "https://google.com" },
         { name: "YouTube", url: "https://youtube.com" },
       ];
 
@@ -2595,29 +3414,40 @@
         try {
           const domain = new URL(url).hostname;
           return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-        } catch { return ''; }
+        } catch {
+          return "";
+        }
       }
       function renderQuickLinks() {
         const links = getLinks();
         const container = document.getElementById("quickLinks");
-        container.innerHTML = links.map((l) => {
-          const icon = faviconUrl(l.url);
-          return `<button onclick="window.open('${l.url}','_blank')" style="display:flex;align-items:center;gap:6px;">
+        container.innerHTML = links
+          .map((l) => {
+            const icon = faviconUrl(l.url);
+            return `<button onclick="window.open('${l.url}','_blank')" style="display:flex;align-items:center;gap:6px;">
             <img src="${icon}" style="width:14px;height:14px;border-radius:3px;flex-shrink:0;" onerror="this.style.display='none'"/>
             ${l.name}
           </button>`;
-        }).join("");
+          })
+          .join("");
       }
       function renderLinksList() {
         const links = getLinks();
         const list = document.getElementById("linksList");
-        if (!links.length) { list.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px;">No links yet.</div>`; return; }
-        list.innerHTML = links.map((l, i) => `
+        if (!links.length) {
+          list.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px;">No links yet.</div>`;
+          return;
+        }
+        list.innerHTML = links
+          .map(
+            (l, i) => `
           <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:10px;border:1px solid var(--border);">
             <span style="flex:1;font-size:13px;font-weight:600;">${l.name}</span>
             <span style="flex:2;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${l.url}</span>
             <button onclick="removeLink(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px;">✕</button>
-          </div>`).join("");
+          </div>`,
+          )
+          .join("");
       }
       function addLink() {
         const name = document.getElementById("linkNameInput").value.trim();
@@ -2647,49 +3477,62 @@
 
       // ===== DRAG-TO-MERGE SYSTEM =====
       const PANELS = {
-        main:     { el: ()=> document.getElementById('mainCard') },
-        ai:       { el: ()=> document.getElementById('aiPanel') },
-        settings: { el: ()=> document.getElementById('settingsPanel') },
+        main: { el: () => document.getElementById("mainCard") },
+        ai: { el: () => document.getElementById("aiPanel") },
+        settings: { el: () => document.getElementById("settingsPanel") },
       };
       const activeMerges = [];
 
       function overlaps(a, b) {
-        const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-        return !(ra.right < rb.left || ra.left > rb.right || ra.bottom < rb.top || ra.top > rb.bottom);
+        const ra = a.getBoundingClientRect(),
+          rb = b.getBoundingClientRect();
+        return !(
+          ra.right < rb.left ||
+          ra.left > rb.right ||
+          ra.bottom < rb.top ||
+          ra.top > rb.bottom
+        );
       }
 
       function dropSide(draggedEl, targetEl) {
         const dr = draggedEl.getBoundingClientRect();
         const tr = targetEl.getBoundingClientRect();
         const dragCx = dr.left + dr.width / 2;
-        const dragCy = dr.top  + dr.height / 2;
-        const dx = dragCx - (tr.left + tr.width  / 2);
-        const dy = dragCy - (tr.top  + tr.height / 2);
+        const dragCy = dr.top + dr.height / 2;
+        const dx = dragCx - (tr.left + tr.width / 2);
+        const dy = dragCy - (tr.top + tr.height / 2);
         return Math.abs(dx) > Math.abs(dy)
-          ? (dx > 0 ? 'right' : 'left')
-          : (dy > 0 ? 'bottom' : 'top');
+          ? dx > 0
+            ? "right"
+            : "left"
+          : dy > 0
+            ? "bottom"
+            : "top";
       }
 
       function showMergeHint(draggedId, show) {
         for (const [tid, cfg] of Object.entries(PANELS)) {
           if (tid === draggedId) continue;
           const el = cfg.el();
-          if (el && el.style.display !== 'none') el.classList.toggle('merge-drop-target', show);
+          if (el && el.style.display !== "none")
+            el.classList.toggle("merge-drop-target", show);
         }
-        const mp = document.getElementById('mergedPanel');
-        if (mp.classList.contains('open')) mp.classList.toggle('merge-drop-target', show);
+        const mp = document.getElementById("mergedPanel");
+        if (mp.classList.contains("open"))
+          mp.classList.toggle("merge-drop-target", show);
       }
 
       function checkMergeOnDrop(draggedId) {
         const dragged = PANELS[draggedId].el();
-        const mp = document.getElementById('mergedPanel');
+        const mp = document.getElementById("mergedPanel");
 
         // drop onto existing merged panel — just add it
-        if (mp.classList.contains('open') && overlaps(dragged, mp)) {
+        if (mp.classList.contains("open") && overlaps(dragged, mp)) {
           const side = dropSide(dragged, mp);
-          const inner = document.getElementById('mergedInner');
-          inner.style.flexDirection = (side === 'top' || side === 'bottom') ? 'column' : 'row';
-          addToMerged(draggedId, side === 'left' || side === 'top');
+          const inner = document.getElementById("mergedInner");
+          inner.style.flexDirection =
+            side === "top" || side === "bottom" ? "column" : "row";
+          addToMerged(draggedId, side === "left" || side === "top");
           saveMergeState();
           return;
         }
@@ -2698,25 +3541,31 @@
         for (const [tid, cfg] of Object.entries(PANELS)) {
           if (tid === draggedId) continue;
           const target = cfg.el();
-          if (!target || target.style.display === 'none') continue;
+          if (!target || target.style.display === "none") continue;
           if (!overlaps(dragged, target)) continue;
 
           const side = dropSide(dragged, target);
-          const isRow = side === 'left' || side === 'right';
+          const isRow = side === "left" || side === "right";
           const dr = dragged.getBoundingClientRect();
           const tr = target.getBoundingClientRect();
 
-          mp.style.left   = tr.left + 'px';
-          mp.style.top    = tr.top  + 'px';
-          mp.style.right  = 'auto';
-          mp.style.bottom = 'auto';
-          mp.style.width  = isRow   ? (tr.width + dr.width)  + 'px' : Math.max(tr.width, dr.width)   + 'px';
-          mp.style.height = isRow   ? Math.max(tr.height, dr.height) + 'px' : (tr.height + dr.height) + 'px';
+          mp.style.left = tr.left + "px";
+          mp.style.top = tr.top + "px";
+          mp.style.right = "auto";
+          mp.style.bottom = "auto";
+          mp.style.width = isRow
+            ? tr.width + dr.width + "px"
+            : Math.max(tr.width, dr.width) + "px";
+          mp.style.height = isRow
+            ? Math.max(tr.height, dr.height) + "px"
+            : tr.height + dr.height + "px";
 
-          document.getElementById('mergedInner').style.flexDirection = isRow ? 'row' : 'column';
+          document.getElementById("mergedInner").style.flexDirection = isRow
+            ? "row"
+            : "column";
 
           // order: dragged before/after target based on side
-          if (side === 'left' || side === 'top') {
+          if (side === "left" || side === "top") {
             addToMerged(draggedId, true);
             addToMerged(tid, false);
           } else {
@@ -2732,81 +3581,116 @@
         if (activeMerges.includes(id)) return;
         const el = PANELS[id].el();
         if (!el) return;
-        const inner = document.getElementById('mergedInner');
-        if (prepend && inner.firstChild) inner.insertBefore(el, inner.firstChild);
+        const inner = document.getElementById("mergedInner");
+        if (prepend && inner.firstChild)
+          inner.insertBefore(el, inner.firstChild);
         else inner.appendChild(el);
         activeMerges.push(id);
-        document.getElementById('mergedPanel').classList.add('open');
+        document.getElementById("mergedPanel").classList.add("open");
       }
 
       function unmergeAll() {
-        const mp = document.getElementById('mergedPanel');
+        const mp = document.getElementById("mergedPanel");
         // restore panels to body
-        activeMerges.forEach(id => {
+        activeMerges.forEach((id) => {
           const el = PANELS[id].el();
-          if (el) { document.body.appendChild(el); el.style.display = ''; }
+          if (el) {
+            document.body.appendChild(el);
+            el.style.display = "";
+          }
         });
         activeMerges.length = 0;
-        mp.classList.remove('open');
-        localStorage.removeItem('mergeState');
+        mp.classList.remove("open");
+        localStorage.removeItem("mergeState");
       }
 
       function saveMergeState() {
-        const mp = document.getElementById('mergedPanel');
-        localStorage.setItem('mergeState', JSON.stringify({
-          panels: [...activeMerges],
-          dir:    document.getElementById('mergedInner').style.flexDirection || 'row',
-          left:   mp.style.left,  top:    mp.style.top,
-          width:  mp.style.width, height: mp.style.height,
-        }));
+        const mp = document.getElementById("mergedPanel");
+        localStorage.setItem(
+          "mergeState",
+          JSON.stringify({
+            panels: [...activeMerges],
+            dir:
+              document.getElementById("mergedInner").style.flexDirection ||
+              "row",
+            left: mp.style.left,
+            top: mp.style.top,
+            width: mp.style.width,
+            height: mp.style.height,
+          }),
+        );
       }
 
       function restoreMergeState() {
-        const saved = localStorage.getItem('mergeState');
+        const saved = localStorage.getItem("mergeState");
         if (!saved) return;
         try {
           const s = JSON.parse(saved);
           if (!s.panels?.length) return;
-          const mp = document.getElementById('mergedPanel');
-          mp.style.left = s.left; mp.style.top = s.top;
-          mp.style.width = s.width; mp.style.height = s.height;
-          mp.style.right = 'auto'; mp.style.bottom = 'auto';
-          document.getElementById('mergedInner').style.flexDirection = s.dir;
-          s.panels.forEach(id => addToMerged(id, false));
-        } catch(e) { localStorage.removeItem('mergeState'); }
+          const mp = document.getElementById("mergedPanel");
+          mp.style.left = s.left;
+          mp.style.top = s.top;
+          mp.style.width = s.width;
+          mp.style.height = s.height;
+          mp.style.right = "auto";
+          mp.style.bottom = "auto";
+          document.getElementById("mergedInner").style.flexDirection = s.dir;
+          s.panels.forEach((id) => addToMerged(id, false));
+        } catch (e) {
+          localStorage.removeItem("mergeState");
+        }
       }
       restoreMergeState();
 
       // drag merged panel by handle
-      (function(){
-        const mp = document.getElementById('mergedPanel');
-        const handle = document.getElementById('mergedHandle');
-        let dx=0, dy=0, on=false;
-        handle.addEventListener('mousedown', e => {
-          if (e.target.tagName === 'BUTTON') return;
+      (function () {
+        const mp = document.getElementById("mergedPanel");
+        const handle = document.getElementById("mergedHandle");
+        let dx = 0,
+          dy = 0,
+          on = false;
+        handle.addEventListener("mousedown", (e) => {
+          if (e.target.tagName === "BUTTON") return;
           on = true;
           const r = mp.getBoundingClientRect();
-          dx = e.clientX - r.left; dy = e.clientY - r.top;
+          dx = e.clientX - r.left;
+          dy = e.clientY - r.top;
         });
-        document.addEventListener('mousemove', e => {
+        document.addEventListener("mousemove", (e) => {
           if (!on) return;
-          mp.style.left=(e.clientX-dx)+'px'; mp.style.top=(e.clientY-dy)+'px'; mp.style.right='auto';
+          mp.style.left = e.clientX - dx + "px";
+          mp.style.top = e.clientY - dy + "px";
+          mp.style.right = "auto";
         });
-        document.addEventListener('mouseup', () => { if(on) { on=false; saveMergeState(); autoSaveLayout(); } });
+        document.addEventListener("mouseup", () => {
+          if (on) {
+            on = false;
+            saveMergeState();
+            autoSaveLayout();
+          }
+        });
       })();
 
       // ===== PANEL MERGE =====
       let mergeSource = null;
 
       function startMerge(id) {
-        if (mergeSource === id) { cancelMerge(); return; }
-        if (mergeSource) { doMerge(mergeSource, id); return; }
+        if (mergeSource === id) {
+          cancelMerge();
+          return;
+        }
+        if (mergeSource) {
+          doMerge(mergeSource, id);
+          return;
+        }
         mergeSource = id;
-        document.querySelector(`#${id} .widget-merge-btn`).classList.add("selecting");
-        document.querySelectorAll(".widget").forEach(w => {
+        document
+          .querySelector(`#${id} .widget-merge-btn`)
+          .classList.add("selecting");
+        document.querySelectorAll(".widget").forEach((w) => {
           if (w.id !== id) w.classList.add("merge-target");
         });
-        document.querySelectorAll(".merge-target").forEach(w => {
+        document.querySelectorAll(".merge-target").forEach((w) => {
           w.addEventListener("click", onMergeTargetClick);
         });
       }
@@ -2817,8 +3701,10 @@
 
       function cancelMerge() {
         if (!mergeSource) return;
-        document.querySelector(`#${mergeSource} .widget-merge-btn`)?.classList.remove("selecting");
-        document.querySelectorAll(".merge-target").forEach(w => {
+        document
+          .querySelector(`#${mergeSource} .widget-merge-btn`)
+          ?.classList.remove("selecting");
+        document.querySelectorAll(".merge-target").forEach((w) => {
           w.classList.remove("merge-target");
           w.removeEventListener("click", onMergeTargetClick);
         });
@@ -2831,8 +3717,12 @@
         if (!wA || !wB) return;
         const labelA = wA.dataset.label;
         const labelB = wB.dataset.label;
-        const contentA = wA.innerHTML.replace(/<button class="widget-merge-btn"[^>]*>.*?<\/button>/s, "").trim();
-        const contentB = wB.innerHTML.replace(/<button class="widget-merge-btn"[^>]*>.*?<\/button>/s, "").trim();
+        const contentA = wA.innerHTML
+          .replace(/<button class="widget-merge-btn"[^>]*>.*?<\/button>/s, "")
+          .trim();
+        const contentB = wB.innerHTML
+          .replace(/<button class="widget-merge-btn"[^>]*>.*?<\/button>/s, "")
+          .trim();
 
         wA.innerHTML = `
           <button class="widget-unmerge-btn" onclick="doUnmerge('${idA}','${idB}')">⊖ Unmerge</button>
@@ -2849,8 +3739,12 @@
 
       function switchTab(btn, tabId) {
         const widget = btn.closest(".widget");
-        widget.querySelectorAll(".widget-tab").forEach(t => t.classList.remove("active"));
-        widget.querySelectorAll(".widget-tab-content").forEach(t => t.classList.remove("active"));
+        widget
+          .querySelectorAll(".widget-tab")
+          .forEach((t) => t.classList.remove("active"));
+        widget
+          .querySelectorAll(".widget-tab-content")
+          .forEach((t) => t.classList.remove("active"));
         btn.classList.add("active");
         document.getElementById(tabId).classList.add("active");
       }
@@ -2872,19 +3766,24 @@
         document.getElementById("authModal").classList.add("open");
         document.getElementById("authError").textContent = "";
       }
-      function closeAuthModal() { document.getElementById("authModal").classList.remove("open"); }
+      function closeAuthModal() {
+        document.getElementById("authModal").classList.remove("open");
+      }
       function toggleAuthMode() {
         authMode = authMode === "signin" ? "signup" : "signin";
-        document.getElementById("authTitle").textContent = authMode === "signin" ? "Sign in to Bloscom" : "Create account";
-        document.getElementById("authSubmitBtn").textContent = authMode === "signin" ? "Sign In" : "Sign Up";
-        document.getElementById("authSwitch").innerHTML = authMode === "signin"
-          ? `Don't have an account? <span onclick="toggleAuthMode()">Sign up</span>`
-          : `Already have an account? <span onclick="toggleAuthMode()">Sign in</span>`;
+        document.getElementById("authTitle").textContent =
+          authMode === "signin" ? "Sign in to Bloscom" : "Create account";
+        document.getElementById("authSubmitBtn").textContent =
+          authMode === "signin" ? "Sign In" : "Sign Up";
+        document.getElementById("authSwitch").innerHTML =
+          authMode === "signin"
+            ? `Don't have an account? <span onclick="toggleAuthMode()">Sign up</span>`
+            : `Already have an account? <span onclick="toggleAuthMode()">Sign in</span>`;
         document.getElementById("authError").textContent = "";
       }
       function handleAuthSubmit() {
         const email = document.getElementById("authEmail").value.trim();
-        const pass  = document.getElementById("authPassword").value;
+        const pass = document.getElementById("authPassword").value;
         if (authMode === "signin") bloscomSignIn(email, pass);
         else bloscomSignUp(email, pass);
       }
@@ -2897,8 +3796,12 @@
         if (window._firebaseUser) {
           signInBtn.style.display = "none";
           userBadgeEl.style.display = "flex";
-          document.getElementById("userBadgeName").textContent = window._firebaseUser.displayName || window._firebaseUser.email.split("@")[0];
-          document.getElementById("planBadge").textContent = (window._userPlan || "free").toUpperCase();
+          document.getElementById("userBadgeName").textContent =
+            window._firebaseUser.displayName ||
+            window._firebaseUser.email.split("@")[0];
+          document.getElementById("planBadge").textContent = (
+            window._userPlan || "free"
+          ).toUpperCase();
           document.getElementById("planBadge").style.display = "inline";
         } else {
           signInBtn.style.display = "";
@@ -2968,24 +3871,28 @@
       settingsHeader.addEventListener("mousedown", (e) => {
         if (e.target.classList.contains("panel-close")) return;
         sDragging = true;
+        showDragGrid();
+        settingsPanel.style.right = "auto";
+        settingsPanel.style.top = "auto";
         const rect = settingsPanel.getBoundingClientRect();
         sOffsetX = e.clientX - rect.left;
         sOffsetY = e.clientY - rect.top;
-        settingsPanel.style.right = "auto";
-        settingsPanel.style.top = "auto";
       });
 
       document.addEventListener("mousemove", (e) => {
         if (!sDragging) return;
         settingsPanel.style.left = e.clientX - sOffsetX + "px";
         settingsPanel.style.top = e.clientY - sOffsetY + "px";
-        showMergeHint('settings', true);
+        updateGhost(settingsPanel);
+        showMergeHint("settings", true);
       });
 
       document.addEventListener("mouseup", () => {
         if (sDragging) {
-          showMergeHint('settings', false);
-          checkMergeOnDrop('settings');
+          snapPanel(settingsPanel);
+          hideDragGrid();
+          showMergeHint("settings", false);
+          checkMergeOnDrop("settings");
           autoSaveLayout();
         }
         sDragging = false;
@@ -3080,46 +3987,73 @@
         applyAccent(savedAccent);
       }
 
-
       // Per-background layout keys
       window._currentBg = localStorage.getItem("bgType") || "sakura";
       function getPanelLayoutKey() {
         const bg = window._currentBg;
-        if (bg === "sakura")      return "panelLayout_sakura_v3";
+        if (bg === "sakura") return "panelLayout_sakura_v3";
         if (bg === "sakura-dark") return "panelLayout_sakura_v3"; // share same layout
         return "panelLayout_" + bg;
       }
 
-      function isSakuraBg() { return window._currentBg === "sakura" || window._currentBg === "sakura-dark"; }
+      function isSakuraBg() {
+        return (
+          window._currentBg === "sakura" || window._currentBg === "sakura-dark"
+        );
+      }
 
       function getDefaultLayout() {
-        const W = window.innerWidth, H = window.innerHeight;
+        const W = window.innerWidth,
+          H = window.innerHeight;
         if (isSakuraBg()) {
           // Right-side stacked layout: main panel top-right, AI + Settings below side by side
           const gap = 12;
           const pLeft = Math.round(W * 0.53);
           const pWidth = Math.round(W * 0.44);
-          const mainH = Math.round(H * 0.40);
+          const mainH = Math.round(H * 0.4);
           const botH = Math.round(H * 0.44);
           const botTop = Math.round(H * 0.04) + mainH + 28;
           const halfW = Math.round((pWidth - gap) / 2);
           return {
-            main:    { left: pLeft, top: Math.round(H * 0.04), width: pWidth, height: mainH },
-            jarvis:  { left: pLeft, top: botTop, width: halfW, height: botH },
-            settings:{ left: pLeft + halfW + gap, top: botTop, width: halfW, height: botH },
+            main: {
+              left: pLeft,
+              top: Math.round(H * 0.04),
+              width: pWidth,
+              height: mainH,
+            },
+            jarvis: { left: pLeft, top: botTop, width: halfW, height: botH },
+            settings: {
+              left: pLeft + halfW + gap,
+              top: botTop,
+              width: halfW,
+              height: botH,
+            },
           };
         }
         const gap = 15;
-        const aiW = 260, sW = 240;
+        const aiW = 260,
+          sW = 240;
         const cardW = Math.min(Math.round(W * 0.52), 780);
-        const cardH = 400, aiH = 400, sH = 400;
+        const cardH = 400,
+          aiH = 400,
+          sH = 400;
         const totalW = aiW + gap + cardW + gap + sW;
         const startX = Math.round((W - totalW) / 2);
         const topY = Math.round((H - cardH) / 2);
         return {
-          jarvis:   { left: startX, top: topY, width: aiW, height: aiH },
-          main:     { left: startX + aiW + gap, top: topY, width: cardW, height: cardH },
-          settings: { left: startX + aiW + gap + cardW + gap, top: topY, width: sW, height: sH },
+          jarvis: { left: startX, top: topY, width: aiW, height: aiH },
+          main: {
+            left: startX + aiW + gap,
+            top: topY,
+            width: cardW,
+            height: cardH,
+          },
+          settings: {
+            left: startX + aiW + gap + cardW + gap,
+            top: topY,
+            width: sW,
+            height: sH,
+          },
         };
       }
 
@@ -3128,7 +4062,7 @@
         unmergeAll();
         applyDefaultLayout();
         const def = getDefaultLayout();
-        openPanelAt(document.getElementById("aiPanel"),       def.jarvis);
+        openPanelAt(document.getElementById("aiPanel"), def.jarvis);
         openPanelAt(document.getElementById("settingsPanel"), def.settings);
       }
 
@@ -3141,7 +4075,6 @@
         card.style.width = def.main.width + "px";
         card.style.maxWidth = "none";
       }
-
 
       function applyMainLayout() {
         const saved = localStorage.getItem(getPanelLayoutKey());
@@ -3169,11 +4102,11 @@
         panel.style.transition = "none";
         panel.style.visibility = "hidden";
         panel.style.display = "flex";
-        panel.style.right  = "auto";
+        panel.style.right = "auto";
         panel.style.bottom = "auto";
-        panel.style.left   = pos.left   + "px";
-        panel.style.top    = pos.top    + "px";
-        panel.style.width  = pos.width  + "px";
+        panel.style.left = pos.left + "px";
+        panel.style.top = pos.top + "px";
+        panel.style.width = pos.width + "px";
         panel.style.height = pos.height + "px";
         // Show after layout is committed, then restore transitions
         requestAnimationFrame(() => {
@@ -3188,7 +4121,7 @@
       const defLayout = getDefaultLayout();
 
       function openPanelsDefault() {
-        const jarvisPos   = initLayout.jarvis   || defLayout.jarvis;
+        const jarvisPos = initLayout.jarvis || defLayout.jarvis;
         const settingsPos = initLayout.settings || defLayout.settings;
 
         // For sakura: if using default (no saved layout), push panels below the actual card
@@ -3197,13 +4130,15 @@
           const cardRect = card.getBoundingClientRect();
           const gap = 16;
           const botTop = Math.round(cardRect.bottom) + gap;
-          const halfW  = Math.round((defLayout.jarvis.width + defLayout.settings.width + 12) / 2);
-          const adjJarvis   = { ...jarvisPos,   top: botTop };
+          const halfW = Math.round(
+            (defLayout.jarvis.width + defLayout.settings.width + 12) / 2,
+          );
+          const adjJarvis = { ...jarvisPos, top: botTop };
           const adjSettings = { ...settingsPos, top: botTop };
-          openPanelAt(document.getElementById("aiPanel"),       adjJarvis);
+          openPanelAt(document.getElementById("aiPanel"), adjJarvis);
           openPanelAt(document.getElementById("settingsPanel"), adjSettings);
         } else {
-          openPanelAt(document.getElementById("aiPanel"),       jarvisPos);
+          openPanelAt(document.getElementById("aiPanel"), jarvisPos);
           openPanelAt(document.getElementById("settingsPanel"), settingsPos);
         }
       }
@@ -3217,19 +4152,20 @@
           const sakCanvas = document.querySelector(".leaves canvas");
           if (sakCanvas) {
             sakCanvas.style.transition = "none";
-            sakCanvas.style.clipPath   = "inset(100% 0 0 0)";
-            sakCanvas.style.opacity    = "0";
+            sakCanvas.style.clipPath = "inset(100% 0 0 0)";
+            sakCanvas.style.opacity = "0";
             setTimeout(() => {
-              sakCanvas.style.transition = "clip-path 2.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease";
-              sakCanvas.style.clipPath   = "inset(0% 0 0 0)";
-              sakCanvas.style.opacity    = "1";
+              sakCanvas.style.transition =
+                "clip-path 2.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease";
+              sakCanvas.style.clipPath = "inset(0% 0 0 0)";
+              sakCanvas.style.opacity = "1";
             }, 80);
           }
           const burnOrder = [
-            { el: document.querySelector(".card"),              delay: 1400 },
-            { el: document.getElementById("aiPanel"),           delay: 1900 },
-            { el: document.getElementById("settingsPanel"),     delay: 2400 },
-            { el: document.getElementById("mergedPanel"),       delay: 1900 },
+            { el: document.querySelector(".card"), delay: 1400 },
+            { el: document.getElementById("aiPanel"), delay: 1900 },
+            { el: document.getElementById("settingsPanel"), delay: 2400 },
+            { el: document.getElementById("mergedPanel"), delay: 1900 },
           ];
           burnOrder.forEach(({ el, delay }) => {
             if (!el || el.style.display === "none") return;
@@ -3237,23 +4173,26 @@
               el.classList.remove("sakura-burn-in");
               void el.offsetWidth;
               el.classList.add("sakura-burn-in");
-              el.addEventListener("animationend", () => el.classList.remove("sakura-burn-in"), { once: true });
+              el.addEventListener(
+                "animationend",
+                () => el.classList.remove("sakura-burn-in"),
+                { once: true },
+              );
             }, delay);
           });
         }
 
         // Mark page as fully loaded so future bg switches use animated transition
-        setTimeout(() => { window._pageLoaded = true; }, 3500);
+        setTimeout(() => {
+          window._pageLoaded = true;
+        }, 3500);
       });
 
-
-
-
       // Set favicon via canvas to handle special filename characters
-      (function() {
+      (function () {
         const img = new Image();
         img.src = "Untitled design(3).png";
-        img.onload = function() {
+        img.onload = function () {
           const c = document.createElement("canvas");
           c.width = c.height = 256;
           c.getContext("2d").drawImage(img, 0, 0, 256, 256);
@@ -3263,45 +4202,72 @@
 
       // ── Weather widget ────────────────────────────────────────────
       (function loadWeather() {
-        const el = document.getElementById('weatherInfo');
+        const el = document.getElementById("weatherInfo");
         if (!el) return;
         const wmoDesc = {
-          0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
-          45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',
-          61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',
-          80:'Rain showers',81:'Showers',82:'Heavy showers',95:'Thunderstorm',99:'Hail storm'
+          0: "Clear sky",
+          1: "Mainly clear",
+          2: "Partly cloudy",
+          3: "Overcast",
+          45: "Foggy",
+          48: "Icy fog",
+          51: "Light drizzle",
+          53: "Drizzle",
+          55: "Heavy drizzle",
+          61: "Light rain",
+          63: "Rain",
+          65: "Heavy rain",
+          71: "Light snow",
+          73: "Snow",
+          75: "Heavy snow",
+          80: "Rain showers",
+          81: "Showers",
+          82: "Heavy showers",
+          95: "Thunderstorm",
+          99: "Hail storm",
         };
-        const wmoIcon = c => {
-          if (c===0||c===1) return '☀️';
-          if (c===2||c===3) return '⛅';
-          if (c>=45&&c<=48) return '🌫️';
-          if (c>=51&&c<=67) return '🌧️';
-          if (c>=71&&c<=77) return '❄️';
-          if (c>=80&&c<=82) return '🌦️';
-          if (c>=95) return '⛈️';
-          return '🌡️';
+        const wmoIcon = (c) => {
+          if (c === 0 || c === 1) return "☀️";
+          if (c === 2 || c === 3) return "⛅";
+          if (c >= 45 && c <= 48) return "🌫️";
+          if (c >= 51 && c <= 67) return "🌧️";
+          if (c >= 71 && c <= 77) return "❄️";
+          if (c >= 80 && c <= 82) return "🌦️";
+          if (c >= 95) return "⛈️";
+          return "🌡️";
         };
         if (!navigator.geolocation) {
-          el.textContent = 'Location unavailable'; return;
+          el.textContent = "Location unavailable";
+          return;
         }
-        navigator.geolocation.getCurrentPosition(async pos => {
-          try {
-            const { latitude: lat, longitude: lon } = pos.coords;
-            // Reverse geocode (city name)
-            let city = '';
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
             try {
-              const geo = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-              const gd = await geo.json();
-              city = gd.address?.city || gd.address?.town || gd.address?.village || gd.address?.county || '';
-            } catch {}
-            const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m,relativehumidity_2m&temperature_unit=celsius&windspeed_unit=kmh&timezone=auto`);
-            const wd = await wRes.json();
-            const c = wd.current;
-            const code = c.weathercode;
-            const temp = Math.round(c.temperature_2m);
-            const desc = wmoDesc[code] || 'Unknown';
-            const icon = wmoIcon(code);
-            el.innerHTML = `
+              const { latitude: lat, longitude: lon } = pos.coords;
+              // Reverse geocode (city name)
+              let city = "";
+              try {
+                const geo = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+                );
+                const gd = await geo.json();
+                city =
+                  gd.address?.city ||
+                  gd.address?.town ||
+                  gd.address?.village ||
+                  gd.address?.county ||
+                  "";
+              } catch {}
+              const wRes = await fetch(
+                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,windspeed_10m,relativehumidity_2m&temperature_unit=celsius&windspeed_unit=kmh&timezone=auto`,
+              );
+              const wd = await wRes.json();
+              const c = wd.current;
+              const code = c.weathercode;
+              const temp = Math.round(c.temperature_2m);
+              const desc = wmoDesc[code] || "Unknown";
+              const icon = wmoIcon(code);
+              el.innerHTML = `
               <div style="display:flex;align-items:center;gap:8px">
                 <span style="font-size:28px">${icon}</span>
                 <div>
@@ -3309,37 +4275,66 @@
                   <div style="font-size:11px">${desc}</div>
                 </div>
               </div>
-              ${city ? `<div style="font-size:11px;margin-top:6px;opacity:0.6">${city}</div>` : ''}
+              ${city ? `<div style="font-size:11px;margin-top:6px;opacity:0.6">${city}</div>` : ""}
               <div style="font-size:11px;margin-top:4px;display:flex;gap:10px">
                 <span>💨 ${Math.round(c.windspeed_10m)} km/h</span>
                 <span>💧 ${c.relativehumidity_2m}%</span>
               </div>`;
-          } catch {
-            el.textContent = 'Could not load weather';
-          }
-        }, () => { el.innerHTML = `<span style="font-size:11px">Allow location for weather</span>`; });
+            } catch {
+              el.textContent = "Could not load weather";
+            }
+          },
+          () => {
+            el.innerHTML = `<span style="font-size:11px">Allow location for weather</span>`;
+          },
+        );
       })();
 
       // ── Widget carousel ───────────────────────────────────────────
       function scrollWidgets(dir) {
-        const grid = document.getElementById('widgetGrid');
-        grid.scrollBy({ left: dir * (grid.offsetWidth * 0.55), behavior: 'smooth' });
+        const grid = document.getElementById("widgetGrid");
+        grid.scrollBy({
+          left: dir * (grid.offsetWidth * 0.55),
+          behavior: "smooth",
+        });
       }
 
       // Date widget
       (function updateDateWidget() {
-        const el = document.getElementById('dateWidget');
+        const el = document.getElementById("dateWidget");
         if (!el) return;
         const now = new Date();
-        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const days = [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ];
+        const months = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
         const day = days[now.getDay()];
         const date = now.getDate();
         const month = months[now.getMonth()];
         const year = now.getFullYear();
-        const h = now.getHours(), m = String(now.getMinutes()).padStart(2,'0');
-        const ampm = h >= 12 ? 'PM' : 'AM';
-        const h12 = ((h % 12) || 12);
+        const h = now.getHours(),
+          m = String(now.getMinutes()).padStart(2, "0");
+        const ampm = h >= 12 ? "PM" : "AM";
+        const h12 = h % 12 || 12;
         el.innerHTML = `<div style="font-size:22px;font-weight:700;color:var(--accent)">${day}</div>
           <div style="font-size:14px;margin-top:2px">${month} ${date}, ${year}</div>
           <div style="font-size:12px;margin-top:4px;color:var(--muted)">${h12}:${m} ${ampm}</div>`;
@@ -3348,21 +4343,32 @@
 
       // Quote widget
       (async function loadQuote() {
-        const el = document.getElementById('quoteWidget');
+        const el = document.getElementById("quoteWidget");
         if (!el) return;
         try {
-          const res = await fetch('https://api.quotable.io/random?maxLength=120');
+          const res = await fetch(
+            "https://api.quotable.io/random?maxLength=120",
+          );
           if (!res.ok) throw new Error();
           const data = await res.json();
           el.innerHTML = `"${data.content}"<div style="margin-top:6px;font-style:normal;font-size:11px;opacity:0.7">— ${data.author}</div>`;
         } catch {
           // fallback quotes
           const quotes = [
-            { q: "The only way to do great work is to love what you do.", a: "Steve Jobs" },
+            {
+              q: "The only way to do great work is to love what you do.",
+              a: "Steve Jobs",
+            },
             { q: "Stay hungry, stay foolish.", a: "Steve Jobs" },
-            { q: "Innovation distinguishes between a leader and a follower.", a: "Steve Jobs" },
+            {
+              q: "Innovation distinguishes between a leader and a follower.",
+              a: "Steve Jobs",
+            },
             { q: "Dream big and dare to fail.", a: "Norman Vaughan" },
-            { q: "Simplicity is the ultimate sophistication.", a: "Leonardo da Vinci" },
+            {
+              q: "Simplicity is the ultimate sophistication.",
+              a: "Leonardo da Vinci",
+            },
           ];
           const pick = quotes[Math.floor(Math.random() * quotes.length)];
           el.innerHTML = `"${pick.q}"<div style="margin-top:6px;font-style:normal;font-size:11px;opacity:0.7">— ${pick.a}</div>`;
@@ -3371,22 +4377,26 @@
 
       // News widget (via rss2json)
       (async function loadNews() {
-        const el = document.getElementById('newsWidget');
+        const el = document.getElementById("newsWidget");
         if (!el) return;
         try {
-          const feed = 'https://feeds.bbci.co.uk/news/world/rss.xml';
+          const feed = "https://feeds.bbci.co.uk/news/world/rss.xml";
           const api = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}&count=5`;
           const res = await fetch(api);
           if (!res.ok) throw new Error();
           const data = await res.json();
-          if (data.status !== 'ok' || !data.items?.length) throw new Error();
-          el.innerHTML = data.items.slice(0,4).map(item =>
-            `<a href="${item.link}" target="_blank" rel="noopener"
+          if (data.status !== "ok" || !data.items?.length) throw new Error();
+          el.innerHTML = data.items
+            .slice(0, 4)
+            .map(
+              (item) =>
+                `<a href="${item.link}" target="_blank" rel="noopener"
                style="color:var(--text);text-decoration:none;display:block;padding:4px 0;border-bottom:1px solid var(--border);line-height:1.4;transition:color 0.2s"
                onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text)'">
                ${item.title}
-             </a>`
-          ).join('');
+             </a>`,
+            )
+            .join("");
         } catch {
           el.innerHTML = `<a href="https://www.bbc.com/news" target="_blank" rel="noopener"
             style="color:var(--accent);text-decoration:none">Open BBC News →</a>`;
