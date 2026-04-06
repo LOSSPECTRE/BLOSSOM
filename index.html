@@ -2276,20 +2276,16 @@
       updateTime();
 
       // SEARCH
-      document
-        .getElementById("search")
-        .addEventListener("keydown", function (e) {
-          if (e.key === "Enter") {
-            const q = this.value.trim();
-            if (q.startsWith("yt "))
-              window.location.href =
-                "https://youtube.com/results?search_query=" + q.slice(3);
-            else if (q.startsWith("gh "))
-              window.location.href =
-                "https://github.com/search?q=" + q.slice(3);
-            else window.location.href = "https://google.com/search?q=" + q;
-          }
-        });
+      document.getElementById("search").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          const q = this.value.trim();
+          if (q.startsWith("yt "))
+            window.location.href = "https://youtube.com/results?search_query=" + q.slice(3);
+          else if (q.startsWith("gh "))
+            window.location.href = "https://github.com/search?q=" + q.slice(3);
+          else window.location.href = "https://google.com/search?q=" + q;
+        }
+      });
 
       // /
       document.addEventListener("keydown", (e) => {

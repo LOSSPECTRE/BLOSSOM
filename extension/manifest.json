@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "BLOSCOM-AI",
+  "version": "1.0",
+  "description": "Right-click any page to get AI help from BLOSCOM-AI",
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "icons": {
+    "16":  "icon.png",
+    "48":  "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_icon": "icon.png",
+    "default_title": "BLOSCOM-AI"
+  }
+}

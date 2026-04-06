@@ -53,7 +53,7 @@ app.use((req, res, next) => {
     req.on("data", c => raw += c);
     req.on("end", () => { req.rawBody = raw; next(); });
   } else {
-    express.json()(req, res, next);
+    express.json({ limit: "20mb" })(req, res, next);
   }
 });
 
@@ -91,6 +91,172 @@ app.post("/api/jarvis", async (req, res) => {
   } catch (error) {
     console.error("BLOSCOM-AI error:", error);
     if (!res.headersSent) res.status(500).json({ error: "Something went wrong." });
+  }
+});
+
+// ── Quick pattern planner (no AI needed) ────────────────────────
+function quickPlan(instruction, elements) {
+  const q = instruction.toLowerCase().trim();
+
+  // "search [query]" or "search for [query]"
+  const searchMatch = q.match(/^search(?:\s+for)?\s+(.+)/);
+  if (searchMatch) {
+    const query = searchMatch[1].trim();
+    const box = elements?.find(e =>
+      (e.tag === "input" || e.tag === "textarea") &&
+      (e.placeholder?.toLowerCase().includes("search") ||
+       e.label?.toLowerCase().includes("search") ||
+       e.type === "search")
+    ) || elements?.find(e => e.tag === "input");
+    if (box) return [
+      { type: "click", index: box.index, description: `Click search box` },
+      { type: "type",  index: box.index, text: query, description: `Type "${query}"` },
+      { type: "key",   index: box.index, key: "Enter", description: "Press Enter to search" }
+    ];
+  }
+
+  // "click [label]"
+  const clickMatch = q.match(/^click\s+(?:on\s+)?(.+)/);
+  if (clickMatch) {
+    const label = clickMatch[1].trim();
+    const el = elements?.find(e =>
+      e.text?.toLowerCase().includes(label) || e.label?.toLowerCase().includes(label)
+    );
+    if (el) return [{ type: "click", index: el.index, description: `Click "${el.text || label}"` }];
+  }
+
+  // "type [text] in [field]" or "fill [field] with [text]"
+  const typeMatch = q.match(/^type\s+(.+?)\s+in\s+(.+)/) || q.match(/^fill\s+(.+?)\s+with\s+(.+)/);
+  if (typeMatch) {
+    const [, a, b] = typeMatch;
+    const [text, field] = q.startsWith("fill") ? [b, a] : [a, b];
+    const el = elements?.find(e =>
+      e.text?.toLowerCase().includes(field) || e.placeholder?.toLowerCase().includes(field) || e.label?.toLowerCase().includes(field)
+    ) || elements?.find(e => e.tag === "input");
+    if (el) return [
+      { type: "click", index: el.index, description: `Click "${field}" field` },
+      { type: "type",  index: el.index, text: text.trim(), description: `Type "${text.trim()}"` }
+    ];
+  }
+
+  // "go to [url]" / "open [url]" / "navigate to [url]"
+  const navMatch = q.match(/^(?:go to|open|navigate to|visit)\s+(.+)/);
+  if (navMatch) {
+    let url = navMatch[1].trim();
+    if (!url.startsWith("http")) url = "https://" + url;
+    return [{ type: "navigate", url, description: `Go to ${url}` }];
+  }
+
+  return null; // no pattern matched, fall back to AI
+}
+
+// ── Agent endpoint (vision + action planning) ────────────────────
+app.post("/api/agent/plan", async (req, res) => {
+  try {
+    const { instruction, screenshot, elements, title } = req.body;
+    if (!instruction) return res.status(400).json({ error: "instruction required" });
+
+    console.log(`Plan request: "${instruction}" | elements: ${elements?.length ?? 0} | screenshot: ${!!screenshot}`);
+    if (elements?.length) console.log("First 3 elements:", JSON.stringify(elements.slice(0, 3)));
+
+    // Try pattern matching first — instant, no AI needed
+    const quick = quickPlan(instruction, elements);
+    if (quick) {
+      console.log("Quick plan matched:", quick.map(s => s.description).join(", "));
+      return res.json({ steps: quick, screenDescription: "" });
+    }
+    console.log("No quick plan match, falling back to AI");
+
+    // Step 1: Use moondream to describe what's on screen
+    let screenDescription = "";
+    if (screenshot) {
+      try {
+        const visionRes = await fetch("http://localhost:11434/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "moondream",
+            prompt: "Describe the key UI elements visible on this screen. Focus on buttons, text fields, menus, and interactive elements. Be concise.",
+            images: [screenshot.replace(/^data:image\/\w+;base64,/, "")],
+            stream: false
+          })
+        });
+        const vd = await visionRes.json();
+        screenDescription = vd.response || "";
+      } catch (e) {
+        console.warn("Vision model error:", e.message);
+      }
+    }
+
+    // Step 2: Use deepseek to plan the steps
+    const elementList = elements?.map(e =>
+      `[${e.index}] ${e.tag} "${e.text || e.placeholder || e.label || ""}" at (${e.x},${e.y})`
+    ).join("\n") || "No elements provided";
+
+    // Limit element list to 60 most relevant to keep prompt short and model fast
+    const planPrompt = `Browser agent. Output ONLY a JSON array, no explanation.
+Page: ${title}
+${screenDescription ? `Screen: ${screenDescription}` : ""}
+Task: "${instruction}"
+
+Clickable elements (use index to target them):
+${elementList.split("\n").slice(0, 60).join("\n")}
+
+Step types:
+- {"type":"click","index":3,"description":"..."} — click an element by index
+- {"type":"click_at","x":500,"y":300,"description":"..."} — click at screen coordinates (use when no element matches)
+- {"type":"type","index":5,"text":"...","description":"..."}
+- {"type":"scroll","direction":"down","amount":300,"description":"..."}
+- {"type":"wait","ms":800,"description":"..."}
+
+Only output the JSON array. Max 5 steps.`;
+
+    const planRes = await openaiLocal.chat.completions.create({
+      model: "deepseek-r1:1.5b",
+      messages: [{ role: "user", content: planPrompt }],
+      stream: false,
+      max_tokens: 250
+    });
+
+    let raw = planRes.choices[0]?.message?.content || "[]";
+    raw = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+    // Strip ```json ... ``` code fences
+    raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    console.log("Raw plan response:", raw.slice(0, 400));
+
+    // Try to extract and parse JSON array
+    let steps = [];
+    try {
+      // Extract the JSON array portion
+      const match = raw.match(/\[[\s\S]*\]/);
+      if (match) {
+        // Strip JS-style // comments (invalid JSON)
+        const cleaned = match[0].replace(/\/\/[^\n]*/g, "");
+        steps = JSON.parse(cleaned);
+      }
+    } catch (parseErr) {
+      console.warn("JSON parse failed:", parseErr.message);
+      steps = [];
+    }
+
+    // Only allow valid step types; normalize aliases; description is optional
+    const VALID_TYPES = new Set(["click", "click_at", "type", "key", "scroll", "wait", "navigate"]);
+    steps = steps
+      .filter(s => s && s.type)
+      .map(s => ({
+        ...s,
+        type: s.type === "button" ? "click" : s.type,
+        description: s.description || s.type
+      }))
+      .filter(s => VALID_TYPES.has(s.type))
+      .slice(0, 5);
+
+    console.log("Parsed steps:", steps.length, steps.map(s => s.type + ": " + s.description).join(", "));
+    res.json({ steps, screenDescription });
+
+  } catch (err) {
+    console.error("Agent plan error:", err.message);
+    res.status(500).json({ error: err.message, steps: [] });
   }
 });
 
