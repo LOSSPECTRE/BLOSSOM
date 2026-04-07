@@ -18,12 +18,12 @@ try {
   console.warn("Firebase Admin not configured — auth/plan checks disabled");
 }
 
-// ── OpenAI (cloud) & Ollama (local) ────────────────────────────
+// ── OpenAI (cloud), Groq (free), Ollama (local) ─────────────────
 const openaiCloud = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const openaiLocal = new OpenAI({ baseURL: "http://localhost:11434/v1", apiKey: "ollama" });
+const groq        = new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY });
 
 const MODEL = {
-  free: { client: openaiLocal, model: "deepseek-r1:1.5b" },
+  free: { client: groq,        model: "llama-3.3-70b-versatile" },
   pro:  { client: openaiCloud, model: "gpt-4o-mini" },
   max:  { client: openaiCloud, model: "gpt-4o" },
 };
@@ -95,8 +95,50 @@ app.post("/api/jarvis", async (req, res) => {
 });
 
 // ── Quick pattern planner (no AI needed) ────────────────────────
+function normalise(instruction) {
+  let q = instruction.toLowerCase().trim();
+
+  // Strip polite filler from start
+  q = q.replace(/^(?:can you|could you|please|would you|will you|i want you to|i need you to|i'd like you to|hey,?|ok,?)\s+/g, "");
+  // Strip filler from end
+  q = q.replace(/\s+(?:please|for me|now|thanks|thank you)\.?$/g, "");
+  q = q.trim();
+
+  // Synonym normalisation
+  q = q.replace(/^(?:look up|search up|find|google|bing)\s+/, "search ");
+  q = q.replace(/^(?:take me to|bring me to|load|go to|head to|navigate to|visit)\s+/, "open ");
+  q = q.replace(/^(?:hit|press|tap|select)\s+(?:the\s+)?(?=\w)/, "click ");
+  q = q.replace(/^(?:write|enter|put|input)\s+/, "type ");
+  q = q.replace(/^(?:go\s+)?(?:back|backward)$/, "go back");
+  q = q.replace(/^(?:go\s+)?(?:forward)$/, "go forward");
+  q = q.replace(/^(?:reload|refresh\s+(?:the\s+)?(?:page|tab)?)$/, "refresh");
+
+  // Expand short site names to full domains
+  const sites = {
+    youtube: "youtube.com", yt: "youtube.com",
+    google: "google.com",
+    reddit: "reddit.com",
+    twitter: "twitter.com", x: "x.com",
+    instagram: "instagram.com", ig: "instagram.com",
+    github: "github.com",
+    netflix: "netflix.com",
+    spotify: "spotify.com",
+    twitch: "twitch.tv",
+    tiktok: "tiktok.com",
+    wikipedia: "wikipedia.org",
+    gmail: "mail.google.com",
+    maps: "maps.google.com",
+  };
+  q = q.replace(/^(open|go to)\s+(\w+)(\s+and\s+.+)?$/, (_, cmd, site, rest) => {
+    const domain = sites[site.toLowerCase()];
+    return domain ? `${cmd} ${domain}${rest || ""}` : `${cmd} ${site}${rest || ""}`;
+  });
+
+  return q;
+}
+
 function quickPlan(instruction, elements) {
-  const q = instruction.toLowerCase().trim();
+  const q = normalise(instruction);
 
   // "search [query]" or "search for [query]"
   const searchMatch = q.match(/^search(?:\s+for)?\s+(.+)/);
@@ -115,8 +157,30 @@ function quickPlan(instruction, elements) {
     ];
   }
 
-  // "click [label]"
-  const clickMatch = q.match(/^click\s+(?:on\s+)?(.+)/);
+  // "scroll down/up [amount]"
+  const scrollMatch = q.match(/^scroll\s+(down|up)(?:\s+(\d+))?/);
+  if (scrollMatch) {
+    const dir = scrollMatch[1];
+    const amount = parseInt(scrollMatch[2] || "500");
+    return [{ type: "scroll", direction: dir, amount, description: `Scroll ${dir} ${amount}px` }];
+  }
+
+  // "go back" / "back"
+  if (/^(?:go\s+)?back$/.test(q)) return [{ type: "history", direction: "back", description: "Go back" }];
+  if (/^(?:go\s+)?forward$/.test(q)) return [{ type: "history", direction: "forward", description: "Go forward" }];
+
+  // "refresh" / "reload"
+  if (/^(?:refresh|reload)/.test(q)) return [{ type: "reload", description: "Refresh page" }];
+
+  // "new tab"
+  if (/^(?:new|open)\s+tab/.test(q)) return [{ type: "newtab", description: "Open new tab" }];
+
+  // "zoom in/out"
+  if (/^zoom\s+in/.test(q))  return [{ type: "zoom", direction: "in",  description: "Zoom in"  }];
+  if (/^zoom\s+out/.test(q)) return [{ type: "zoom", direction: "out", description: "Zoom out" }];
+
+  // "click [label]" — find by visible text or aria-label
+  const clickMatch = q.match(/^click\s+(?:on\s+)?(?:the\s+)?(.+)/);
   if (clickMatch) {
     const label = clickMatch[1].trim();
     const el = elements?.find(e =>
@@ -126,12 +190,14 @@ function quickPlan(instruction, elements) {
   }
 
   // "type [text] in [field]" or "fill [field] with [text]"
-  const typeMatch = q.match(/^type\s+(.+?)\s+in\s+(.+)/) || q.match(/^fill\s+(.+?)\s+with\s+(.+)/);
+  const typeMatch = q.match(/^type\s+(.+?)\s+in(?:to)?\s+(.+)/) || q.match(/^fill\s+(.+?)\s+with\s+(.+)/);
   if (typeMatch) {
     const [, a, b] = typeMatch;
     const [text, field] = q.startsWith("fill") ? [b, a] : [a, b];
     const el = elements?.find(e =>
-      e.text?.toLowerCase().includes(field) || e.placeholder?.toLowerCase().includes(field) || e.label?.toLowerCase().includes(field)
+      e.text?.toLowerCase().includes(field) ||
+      e.placeholder?.toLowerCase().includes(field) ||
+      e.label?.toLowerCase().includes(field)
     ) || elements?.find(e => e.tag === "input");
     if (el) return [
       { type: "click", index: el.index, description: `Click "${field}" field` },
@@ -139,12 +205,35 @@ function quickPlan(instruction, elements) {
     ];
   }
 
+  // "go to [url] and search/do [something]" — compound instruction
+  const navAndSearch = q.match(/^(?:go to|open|navigate to|visit)\s+(\S+)\s+and\s+search(?:\s+for)?\s+(.+)/);
+  if (navAndSearch) {
+    let url = navAndSearch[1].trim();
+    const query = navAndSearch[2].trim();
+    if (!url.startsWith("http")) url = "https://" + url;
+    return [
+      { type: "navigate", url, description: `Go to ${url}` },
+      { type: "wait", ms: 2000, description: "Wait for page to load" },
+      { type: "search_after_nav", query, description: `Search for "${query}"` }
+    ];
+  }
+
   // "go to [url]" / "open [url]" / "navigate to [url]"
-  const navMatch = q.match(/^(?:go to|open|navigate to|visit)\s+(.+)/);
+  const navMatch = q.match(/^(?:go to|open|navigate to|visit)\s+(\S+)$/);
   if (navMatch) {
     let url = navMatch[1].trim();
     if (!url.startsWith("http")) url = "https://" + url;
     return [{ type: "navigate", url, description: `Go to ${url}` }];
+  }
+
+  // "select [option] in [dropdown]"
+  const selectMatch = q.match(/^select\s+(.+?)\s+(?:in|from)\s+(.+)/);
+  if (selectMatch) {
+    const [, option, field] = selectMatch;
+    const el = elements?.find(e =>
+      e.tag === "select" && (e.label?.toLowerCase().includes(field) || e.text?.toLowerCase().includes(field))
+    ) || elements?.find(e => e.tag === "select");
+    if (el) return [{ type: "select", index: el.index, value: option.trim(), description: `Select "${option}" in ${field}` }];
   }
 
   return null; // no pattern matched, fall back to AI
@@ -211,11 +300,11 @@ Step types:
 
 Only output the JSON array. Max 5 steps.`;
 
-    const planRes = await openaiLocal.chat.completions.create({
-      model: "deepseek-r1:1.5b",
+    const planRes = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: planPrompt }],
       stream: false,
-      max_tokens: 250
+      max_tokens: 300
     });
 
     let raw = planRes.choices[0]?.message?.content || "[]";
@@ -240,7 +329,7 @@ Only output the JSON array. Max 5 steps.`;
     }
 
     // Only allow valid step types; normalize aliases; description is optional
-    const VALID_TYPES = new Set(["click", "click_at", "type", "key", "scroll", "wait", "navigate"]);
+    const VALID_TYPES = new Set(["click", "click_at", "type", "key", "scroll", "wait", "navigate", "history", "reload", "newtab", "zoom", "select"]);
     steps = steps
       .filter(s => s && s.type)
       .map(s => ({

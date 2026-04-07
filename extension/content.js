@@ -1,5 +1,22 @@
+if (window.__bloscomLoaded) { /* already loaded */ } else {
+window.__bloscomLoaded = true;
+
 let overlayOpen = false;
 let chatHistory = [];
+
+// ── Resume pending steps after navigation ───────────────────────
+chrome.storage.local.get("bloscomPendingSteps").then(({ bloscomPendingSteps }) => {
+  if (!bloscomPendingSteps?.length) return;
+  chrome.storage.local.remove("bloscomPendingSteps");
+  const run = async () => {
+    await new Promise(r => setTimeout(r, 2000));
+    openOverlay();
+    await new Promise(r => setTimeout(r, 500));
+    await runStepsWithPermission(bloscomPendingSteps, []);
+  };
+  if (document.readyState === "complete") run();
+  else window.addEventListener("load", run, { once: true });
+});
 
 // ── Listen for right-click trigger from background ──────────────
 chrome.runtime.onMessage.addListener((msg) => {
@@ -73,9 +90,55 @@ function scanPageElements() {
 async function executeStep(step, elements) {
   const el = elements.find(e => e.index === step.index)?._el;
 
-  if (step.type === "navigate") {
+  if (step.type === "search_after_nav") {
+    // Page just loaded — find the search box and type
+    await sleep(1500);
+    const box = document.querySelector('input[type="search"], input[name="search_query"], input[name="q"], textarea[name="q"], input[placeholder*="earch" i]');
+    if (!box) throw new Error("No search box found on page");
+    box.focus();
+    box.value = "";
+    box.dispatchEvent(new Event("input", { bubbles: true }));
+    for (const char of step.query) {
+      box.value += char;
+      box.dispatchEvent(new Event("input", { bubbles: true }));
+      await sleep(30);
+    }
+    box.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", keyCode: 13, bubbles: true }));
+    box.dispatchEvent(new KeyboardEvent("keypress", { key: "Enter", keyCode: 13, bubbles: true }));
+    box.dispatchEvent(new KeyboardEvent("keyup",   { key: "Enter", keyCode: 13, bubbles: true }));
+    const form = box.closest("form");
+    if (form) form.submit();
+
+  } else if (step.type === "navigate") {
     window.location.href = step.url;
     await sleep(2000);
+
+  } else if (step.type === "history") {
+    if (step.direction === "back") window.history.back();
+    else window.history.forward();
+    await sleep(1000);
+
+  } else if (step.type === "reload") {
+    window.location.reload();
+    await sleep(2000);
+
+  } else if (step.type === "newtab") {
+    window.open("about:blank", "_blank");
+
+  } else if (step.type === "zoom") {
+    const current = parseFloat(document.body.style.zoom || "1");
+    document.body.style.zoom = step.direction === "in" ? current + 0.1 : Math.max(0.3, current - 0.1);
+
+  } else if (step.type === "select") {
+    if (!el) throw new Error(`Element ${step.index} not found`);
+    el.focus();
+    // Try matching by text or value
+    const opt = Array.from(el.options).find(o =>
+      o.text.toLowerCase().includes(step.value.toLowerCase()) ||
+      o.value.toLowerCase().includes(step.value.toLowerCase())
+    );
+    if (opt) el.value = opt.value;
+    el.dispatchEvent(new Event("change", { bubbles: true }));
 
   } else if (step.type === "click_at") {
     const x = step.x, y = step.y;
@@ -333,11 +396,17 @@ async function runStepsWithPermission(steps, elements) {
 
     if (allowed === "skip") continue;
 
+    // If this step navigates away, save remaining steps first and wait
+    if (step.type === "navigate" && i < steps.length - 1) {
+      const remaining = steps.slice(i + 1);
+      await chrome.storage.local.set({ bloscomPendingSteps: remaining });
+    }
+
     // Execute
     const doingMsg = appendMessage("ai", `Doing: ${step.description}...`, true);
     try {
       await executeStep(step, elements);
-      await sleep(600); // small pause between steps
+      await sleep(600);
       doingMsg.remove();
       appendMessage("ai", `✓ ${step.description}`);
     } catch (err) {
@@ -355,7 +424,7 @@ function showPermissionCard(step, current, total, container) {
     const card = document.createElement("div");
     card.className = "bloscom-msg bloscom-ai bloscom-permission-card";
 
-    const typeIcon = { click: "🖱", type: "⌨️", scroll: "↕️", wait: "⏳" }[step.type] || "▶";
+    const typeIcon = { click: "🖱", type: "⌨️", scroll: "↕️", wait: "⏳", navigate: "🌐", search_after_nav: "🔍" }[step.type] || "▶";
     const typeLabel = step.type === "type"
       ? `Type <span class="bloscom-type-preview">"${step.text}"</span>`
       : step.description;
@@ -363,28 +432,52 @@ function showPermissionCard(step, current, total, container) {
     card.innerHTML = `
       <div class="bloscom-perm-header">Step ${current} of ${total}</div>
       <div class="bloscom-perm-action">${typeIcon} ${typeLabel}</div>
-      <div class="bloscom-perm-btns">
-        <button class="bloscom-btn-allow">Allow</button>
-        <button class="bloscom-btn-skip">Skip</button>
-        <button class="bloscom-btn-cancel">Cancel all</button>
+      <div class="bloscom-perm-options">
+        <button class="bloscom-perm-option bloscom-opt-allow bloscom-focused">
+          <span class="bloscom-perm-key">↵</span> Allow
+        </button>
+        <button class="bloscom-perm-option bloscom-opt-skip">
+          <span class="bloscom-perm-key">S</span> Skip
+        </button>
+        <button class="bloscom-perm-option bloscom-opt-cancel">
+          <span class="bloscom-perm-key">Esc</span> Cancel all
+        </button>
       </div>
+      <div class="bloscom-kbd-hint">↑ ↓ to move · Enter to select</div>
     `;
     container.appendChild(card);
     container.scrollTop = container.scrollHeight;
 
-    card.querySelector(".bloscom-btn-allow").addEventListener("click", () => {
-      card.querySelector(".bloscom-perm-btns").remove();
-      card.querySelector(".bloscom-perm-action").innerHTML += ' <span style="color:#86efac">✓ Allowed</span>';
-      resolve("allow");
-    });
-    card.querySelector(".bloscom-btn-skip").addEventListener("click", () => {
-      card.querySelector(".bloscom-perm-btns").remove();
-      card.querySelector(".bloscom-perm-action").innerHTML += ' <span style="opacity:0.5">— Skipped</span>';
-      resolve("skip");
-    });
-    card.querySelector(".bloscom-btn-cancel").addEventListener("click", () => {
-      resolve("cancel");
-    });
+    const options = Array.from(card.querySelectorAll(".bloscom-perm-option"));
+    let focusedIndex = 0;
+
+    const setFocus = (i) => {
+      options.forEach(o => o.classList.remove("bloscom-focused"));
+      focusedIndex = (i + options.length) % options.length;
+      options[focusedIndex].classList.add("bloscom-focused");
+    };
+
+    const choose = (result, label, color) => {
+      card.querySelector(".bloscom-perm-options").remove();
+      card.querySelector(".bloscom-kbd-hint")?.remove();
+      card.querySelector(".bloscom-perm-action").innerHTML +=
+        ` <span style="color:${color}">${label}</span>`;
+      document.removeEventListener("keydown", onKey, true);
+      resolve(result);
+    };
+
+    const onKey = (e) => {
+      if (e.key === "ArrowDown")  { e.preventDefault(); setFocus(focusedIndex + 1); }
+      if (e.key === "ArrowUp")    { e.preventDefault(); setFocus(focusedIndex - 1); }
+      if (e.key === "Enter")      { e.preventDefault(); options[focusedIndex].click(); }
+      if (e.key === "Escape")     { e.preventDefault(); choose("cancel", "✕ Cancelled", "rgba(255,100,100,0.8)"); }
+      if (e.key.toLowerCase() === "s") { e.preventDefault(); choose("skip", "— Skipped", "rgba(255,255,255,0.4)"); }
+    };
+    document.addEventListener("keydown", onKey, true);
+
+    options[0].addEventListener("click", () => choose("allow",  "✓ Allowed",   "#86efac"));
+    options[1].addEventListener("click", () => choose("skip",   "— Skipped",   "rgba(255,255,255,0.4)"));
+    options[2].addEventListener("click", () => choose("cancel", "✕ Cancelled", "rgba(255,100,100,0.8)"));
   });
 }
 
@@ -435,3 +528,4 @@ function makeDraggable(panel, handle) {
     panel.style.transition = "";
   });
 }
+} // end bloscom guard
