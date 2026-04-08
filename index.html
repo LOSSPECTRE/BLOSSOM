@@ -2388,6 +2388,10 @@
         const container = document.querySelector(".leaves");
         container.innerHTML = "";
         document.body.classList.remove("bg-grid");
+        // Sync theme to extension
+        const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#f9a8d4";
+        try { chrome.storage && chrome.storage.local.set({ bloscomTheme: { bg: type, accent } }); } catch(e) {}
+        localStorage.setItem("bgType", type);
         const { r, g, b } = hexToRgb(
           getComputedStyle(document.documentElement)
             .getPropertyValue("--accent")
@@ -2919,6 +2923,8 @@
 
       const savedBg = localStorage.getItem("bgType") || "sakura";
       applyBackground(savedBg);
+      // Sync current theme to extension on load
+      try { chrome.storage && chrome.storage.local.set({ bloscomTheme: { bg: savedBg, accent: localStorage.getItem("accentColor") || "#f9a8d4" } }); } catch(e) {}
 
       // BG more toggle
       let bgMoreOpen = false;
@@ -3854,6 +3860,7 @@
         });
 
         localStorage.setItem("accentColor", hex);
+        try { chrome.storage && chrome.storage.local.set({ bloscomTheme: { bg: localStorage.getItem("bgType") || "sakura", accent: hex } }); } catch(e) {}
         applyBackground(localStorage.getItem("bgType") || "sakura");
       }
 

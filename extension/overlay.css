@@ -12,8 +12,8 @@
 }
 
 #bloscom-panel {
-  width: 460px;
-  max-height: 680px;
+  width: min(540px, calc(100vw - 40px));
+  height: min(720px, calc(100vh - 40px));
   background: #0d1117;
   border: 1px solid rgba(249, 168, 212, 0.25);
   border-radius: 20px;
@@ -50,10 +50,11 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: #f9a8d4;
-  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 #bloscom-header-btns {
@@ -107,6 +108,29 @@
   cursor: pointer;
   font-size: 12px;
   padding: 0;
+}
+
+/* Watermark logo */
+#bloscom-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  height: 400px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+#bloscom-watermark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: brightness(3) saturate(0.5);
+}
+#bloscom-messages, #bloscom-input-row, #bloscom-header, #bloscom-context-bar {
+  position: relative;
+  z-index: 1;
 }
 
 #bloscom-messages {

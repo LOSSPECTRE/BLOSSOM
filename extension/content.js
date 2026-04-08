@@ -4,6 +4,13 @@ window.__bloscomLoaded = true;
 let overlayOpen = false;
 let chatHistory = [];
 
+// ── Sync BLOSSOM theme if we're on the BLOSSOM dashboard ────────
+if (window.location.hostname === "localhost" || window.location.href.includes("127.0.0.1")) {
+  const bg     = localStorage.getItem("bgType")     || "sakura";
+  const accent = localStorage.getItem("accentColor") || "#f9a8d4";
+  chrome.storage.local.set({ bloscomTheme: { bg, accent } });
+}
+
 // ── Resume pending steps after navigation ───────────────────────
 chrome.storage.local.get("bloscomPendingSteps").then(({ bloscomPendingSteps }) => {
   if (!bloscomPendingSteps?.length) return;
@@ -233,22 +240,79 @@ function removeHighlight() {
 }
 
 // ── Main Overlay ────────────────────────────────────────────────
+function applyThemeToPanel(panel, theme) {
+  if (!theme) return;
+  const { bg, accent } = theme;
+  const lightBgs = ["sakura", "petals"];
+  const isLight = lightBgs.includes(bg);
+
+  const overlay = document.getElementById("bloscom-overlay");
+
+  if (isLight) {
+    // Dark pinkish/mauve — matches BLOSSOM's sakura panel style
+    panel.style.background = "rgba(180,120,150,0.92)";
+    panel.style.borderColor = "rgba(255,255,255,0.2)";
+    panel.style.boxShadow = `0 24px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.15)`;
+    const style = document.createElement("style");
+    style.id = "bloscom-theme-overrides";
+    style.textContent = `
+      #bloscom-header { background: rgba(0,0,0,0.1) !important; border-color: rgba(255,255,255,0.12) !important; }
+      #bloscom-title { color: #fff !important; }
+      #bloscom-header-btns button { color: rgba(255,255,255,0.6) !important; }
+      #bloscom-header-btns button:hover { color: #fff !important; background: rgba(255,255,255,0.12) !important; }
+      #bloscom-screenshot-btn { border-color: rgba(255,255,255,0.35) !important; color: #fff !important; }
+      .bloscom-ai { background: rgba(0,0,0,0.12) !important; border-color: rgba(255,255,255,0.1) !important; color: #fff !important; }
+      .bloscom-user { background: rgba(255,255,255,0.2) !important; border-color: rgba(255,255,255,0.25) !important; color: #fff !important; }
+      #bloscom-input { background: rgba(255,255,255,0.15) !important; border-color: rgba(255,255,255,0.25) !important; color: #fff !important; }
+      #bloscom-input::placeholder { color: rgba(255,255,255,0.45) !important; }
+      #bloscom-input-row { background: rgba(0,0,0,0.1) !important; border-color: rgba(255,255,255,0.1) !important; }
+      #bloscom-send { background: rgba(255,255,255,0.85) !important; color: #5a1a35 !important; }
+      #bloscom-send:hover { background: #fff !important; }
+      .bloscom-perm-option { color: #fff !important; border-color: rgba(255,255,255,0.15) !important; background: rgba(0,0,0,0.1) !important; }
+      .bloscom-perm-option.bloscom-focused { background: rgba(255,255,255,0.2) !important; border-color: rgba(255,255,255,0.5) !important; }
+      .bloscom-perm-header { color: rgba(255,255,255,0.7) !important; }
+      .bloscom-perm-action { color: #fff !important; }
+      .bloscom-kbd-hint { color: rgba(255,255,255,0.35) !important; }
+      #bloscom-context-bar { background: rgba(0,0,0,0.12) !important; border-color: rgba(255,255,255,0.12) !important; color: #fff !important; }
+    `;
+    document.head.appendChild(style);
+  } else {
+    // Dark theme — remove any light overrides
+    document.getElementById("bloscom-theme-overrides")?.remove();
+    panel.style.background = "#0d1117";
+    panel.style.borderColor = accent + "40";
+    panel.style.boxShadow = `0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px ${accent}15`;
+  }
+
+  // Always update accent color on send button
+  const sendBtn = document.getElementById("bloscom-send");
+  if (sendBtn) sendBtn.style.background = accent;
+}
+
 function openOverlay(prefill = "") {
   overlayOpen = true;
   chatHistory = [];
 
   const overlay = document.createElement("div");
   overlay.id = "bloscom-overlay";
+  const LOGO_SVG = `<img src="${chrome.runtime.getURL('logo.png')}" />`;
+
   overlay.innerHTML = `
     <div id="bloscom-panel">
+      <!-- Watermark logo -->
+      <div id="bloscom-watermark">${LOGO_SVG}</div>
+
       <div id="bloscom-header">
         <div id="bloscom-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" opacity="0.7"><rect x="2" y="4" width="16" height="2" rx="1"/><rect x="2" y="9" width="16" height="2" rx="1"/><rect x="2" y="14" width="16" height="2" rx="1"/></svg>
           BLOSCOM-AI
         </div>
         <div id="bloscom-header-btns">
-          <button id="bloscom-screenshot-btn">Scan page</button>
-          <button id="bloscom-close">✕</button>
+          <button id="bloscom-screenshot-btn" title="Scan page">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Scan
+          </button>
+          <button id="bloscom-close" title="Close">✕</button>
         </div>
       </div>
 
@@ -274,6 +338,11 @@ function openOverlay(prefill = "") {
   `;
 
   document.body.appendChild(overlay);
+
+  // Apply saved BLOSSOM theme
+  chrome.storage.local.get("bloscomTheme").then(({ bloscomTheme }) => {
+    applyThemeToPanel(document.getElementById("bloscom-panel"), bloscomTheme);
+  });
   makeDraggable(document.getElementById("bloscom-panel"), document.getElementById("bloscom-header"));
 
   document.getElementById("bloscom-close").addEventListener("click", closeOverlay);
